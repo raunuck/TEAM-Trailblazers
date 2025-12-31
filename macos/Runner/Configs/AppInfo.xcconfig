@@ -6,12 +6,18 @@
 
 // The application's name. By default this is also the title of the Flutter window.
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 <<<<<<< HEAD
+=======
+>>>>>>> 9aede6ccb7c215ef9b1100fe59454f598f91af90
 PRODUCT_NAME = productivity_app
 
 // The application's bundle identifier
 PRODUCT_BUNDLE_IDENTIFIER = com.example.productivityApp
+=======
+<<<<<<< HEAD
+>>>>>>> 9aede6ccb7c215ef9b1100fe59454f598f91af90
 =======
 >>>>>>> 9aede6ccb7c215ef9b1100fe59454f598f91af90
 PRODUCT_NAME = flutter_application_1
@@ -19,6 +25,10 @@ PRODUCT_NAME = flutter_application_1
 // The application's bundle identifier
 PRODUCT_BUNDLE_IDENTIFIER = com.example.flutterApplication1
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> be46472 (Initial commit)
+>>>>>>> 9aede6ccb7c215ef9b1100fe59454f598f91af90
 =======
 >>>>>>> be46472 (Initial commit)
 >>>>>>> 9aede6ccb7c215ef9b1100fe59454f598f91af90

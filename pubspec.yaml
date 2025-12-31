@@ -1,5 +1,6 @@
 name: adaptive_student_time
 <<<<<<< HEAD
+<<<<<<< HEAD
 description: "A new Flutter project."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
@@ -34,6 +35,8 @@ dependencies:
   
   # Make sure these lines line up with 'flutter:' above
 =======
+=======
+>>>>>>> 9aede6ccb7c215ef9b1100fe59454f598f91af90
 description: A student productivity app.
 publish_to: 'none' 
 version: 1.0.0+1
@@ -46,6 +49,9 @@ dependencies:
     sdk: flutter
 
   # Your Packages
+<<<<<<< HEAD
+>>>>>>> 9aede6ccb7c215ef9b1100fe59454f598f91af90
+=======
 >>>>>>> 9aede6ccb7c215ef9b1100fe59454f598f91af90
   cupertino_icons: ^1.0.8
   google_fonts: ^6.2.1
@@ -55,6 +61,7 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+<<<<<<< HEAD
 <<<<<<< HEAD
 
   # The "flutter_lints" package below contains a set of recommended lints to
@@ -105,6 +112,12 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+=======
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+>>>>>>> 9aede6ccb7c215ef9b1100fe59454f598f91af90
 =======
   flutter_lints: ^3.0.0
 

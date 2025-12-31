@@ -1,15 +1,21 @@
 {
 <<<<<<< HEAD
+<<<<<<< HEAD
     "name": "flutter_application_1",
     "short_name": "flutter_application_1",
 =======
 <<<<<<< HEAD
+=======
+>>>>>>> 9aede6ccb7c215ef9b1100fe59454f598f91af90
     "name": "productivity_app",
     "short_name": "productivity_app",
 =======
     "name": "flutter_application_1",
     "short_name": "flutter_application_1",
 >>>>>>> be46472 (Initial commit)
+<<<<<<< HEAD
+>>>>>>> 9aede6ccb7c215ef9b1100fe59454f598f91af90
+=======
 >>>>>>> 9aede6ccb7c215ef9b1100fe59454f598f91af90
     "start_url": ".",
     "display": "standalone",

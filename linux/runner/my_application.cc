@@ -46,13 +46,19 @@ static void my_application_activate(GApplication* application) {
     GtkHeaderBar* header_bar = GTK_HEADER_BAR(gtk_header_bar_new());
     gtk_widget_show(GTK_WIDGET(header_bar));
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 <<<<<<< HEAD
+=======
+>>>>>>> 9aede6ccb7c215ef9b1100fe59454f598f91af90
     gtk_header_bar_set_title(header_bar, "productivity_app");
     gtk_header_bar_set_show_close_button(header_bar, TRUE);
     gtk_window_set_titlebar(window, GTK_WIDGET(header_bar));
   } else {
     gtk_window_set_title(window, "productivity_app");
+=======
+<<<<<<< HEAD
+>>>>>>> 9aede6ccb7c215ef9b1100fe59454f598f91af90
 =======
 >>>>>>> 9aede6ccb7c215ef9b1100fe59454f598f91af90
     gtk_header_bar_set_title(header_bar, "flutter_application_1");
@@ -61,6 +67,10 @@ static void my_application_activate(GApplication* application) {
   } else {
     gtk_window_set_title(window, "flutter_application_1");
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> be46472 (Initial commit)
+>>>>>>> 9aede6ccb7c215ef9b1100fe59454f598f91af90
 =======
 >>>>>>> be46472 (Initial commit)
 >>>>>>> 9aede6ccb7c215ef9b1100fe59454f598f91af90

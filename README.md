@@ -1,11 +1,17 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 # flutter_application_1
 =======
 <<<<<<< HEAD
+=======
+>>>>>>> 9aede6ccb7c215ef9b1100fe59454f598f91af90
 # productivity_app
 =======
 # flutter_application_1
 >>>>>>> be46472 (Initial commit)
+<<<<<<< HEAD
+>>>>>>> 9aede6ccb7c215ef9b1100fe59454f598f91af90
+=======
 >>>>>>> 9aede6ccb7c215ef9b1100fe59454f598f91af90
 
 A new Flutter project.

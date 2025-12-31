@@ -1,13 +1,19 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application
 <<<<<<< HEAD
+<<<<<<< HEAD
         android:label="flutter_application_1"
 =======
 <<<<<<< HEAD
+=======
+>>>>>>> 9aede6ccb7c215ef9b1100fe59454f598f91af90
         android:label="productivity_app"
 =======
         android:label="flutter_application_1"
 >>>>>>> be46472 (Initial commit)
+<<<<<<< HEAD
+>>>>>>> 9aede6ccb7c215ef9b1100fe59454f598f91af90
+=======
 >>>>>>> 9aede6ccb7c215ef9b1100fe59454f598f91af90
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">

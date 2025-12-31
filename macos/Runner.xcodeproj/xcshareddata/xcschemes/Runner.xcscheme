@@ -16,13 +16,19 @@
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "33CC10EC2044A3C60003C045"
 <<<<<<< HEAD
+<<<<<<< HEAD
                BuildableName = "flutter_application_1.app"
 =======
 <<<<<<< HEAD
+=======
+>>>>>>> 9aede6ccb7c215ef9b1100fe59454f598f91af90
                BuildableName = "productivity_app.app"
 =======
                BuildableName = "flutter_application_1.app"
 >>>>>>> be46472 (Initial commit)
+<<<<<<< HEAD
+>>>>>>> 9aede6ccb7c215ef9b1100fe59454f598f91af90
+=======
 >>>>>>> 9aede6ccb7c215ef9b1100fe59454f598f91af90
                BlueprintName = "Runner"
                ReferencedContainer = "container:Runner.xcodeproj">
@@ -40,13 +46,19 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "33CC10EC2044A3C60003C045"
 <<<<<<< HEAD
+<<<<<<< HEAD
             BuildableName = "flutter_application_1.app"
 =======
 <<<<<<< HEAD
+=======
+>>>>>>> 9aede6ccb7c215ef9b1100fe59454f598f91af90
             BuildableName = "productivity_app.app"
 =======
             BuildableName = "flutter_application_1.app"
 >>>>>>> be46472 (Initial commit)
+<<<<<<< HEAD
+>>>>>>> 9aede6ccb7c215ef9b1100fe59454f598f91af90
+=======
 >>>>>>> 9aede6ccb7c215ef9b1100fe59454f598f91af90
             BlueprintName = "Runner"
             ReferencedContainer = "container:Runner.xcodeproj">
@@ -83,13 +95,19 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "33CC10EC2044A3C60003C045"
 <<<<<<< HEAD
+<<<<<<< HEAD
             BuildableName = "flutter_application_1.app"
 =======
 <<<<<<< HEAD
+=======
+>>>>>>> 9aede6ccb7c215ef9b1100fe59454f598f91af90
             BuildableName = "productivity_app.app"
 =======
             BuildableName = "flutter_application_1.app"
 >>>>>>> be46472 (Initial commit)
+<<<<<<< HEAD
+>>>>>>> 9aede6ccb7c215ef9b1100fe59454f598f91af90
+=======
 >>>>>>> 9aede6ccb7c215ef9b1100fe59454f598f91af90
             BlueprintName = "Runner"
             ReferencedContainer = "container:Runner.xcodeproj">
@@ -108,13 +126,19 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "33CC10EC2044A3C60003C045"
 <<<<<<< HEAD
+<<<<<<< HEAD
             BuildableName = "flutter_application_1.app"
 =======
 <<<<<<< HEAD
+=======
+>>>>>>> 9aede6ccb7c215ef9b1100fe59454f598f91af90
             BuildableName = "productivity_app.app"
 =======
             BuildableName = "flutter_application_1.app"
 >>>>>>> be46472 (Initial commit)
+<<<<<<< HEAD
+>>>>>>> 9aede6ccb7c215ef9b1100fe59454f598f91af90
+=======
 >>>>>>> 9aede6ccb7c215ef9b1100fe59454f598f91af90
             BlueprintName = "Runner"
             ReferencedContainer = "container:Runner.xcodeproj">

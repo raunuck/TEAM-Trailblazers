@@ -6,13 +6,19 @@
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
 <<<<<<< HEAD
+<<<<<<< HEAD
 	<string>Flutter Application 1</string>
 =======
 <<<<<<< HEAD
+=======
+>>>>>>> 9aede6ccb7c215ef9b1100fe59454f598f91af90
 	<string>Productivity App</string>
 =======
 	<string>Flutter Application 1</string>
 >>>>>>> be46472 (Initial commit)
+<<<<<<< HEAD
+>>>>>>> 9aede6ccb7c215ef9b1100fe59454f598f91af90
+=======
 >>>>>>> 9aede6ccb7c215ef9b1100fe59454f598f91af90
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
@@ -22,13 +28,19 @@
 	<string>6.0</string>
 	<key>CFBundleName</key>
 <<<<<<< HEAD
+<<<<<<< HEAD
 	<string>flutter_application_1</string>
 =======
 <<<<<<< HEAD
+=======
+>>>>>>> 9aede6ccb7c215ef9b1100fe59454f598f91af90
 	<string>productivity_app</string>
 =======
 	<string>flutter_application_1</string>
 >>>>>>> be46472 (Initial commit)
+<<<<<<< HEAD
+>>>>>>> 9aede6ccb7c215ef9b1100fe59454f598f91af90
+=======
 >>>>>>> 9aede6ccb7c215ef9b1100fe59454f598f91af90
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>

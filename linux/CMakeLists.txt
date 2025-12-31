@@ -5,12 +5,18 @@ project(runner LANGUAGES CXX)
 # The name of the executable created for the application. Change this to change
 # the on-disk name of your application.
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 <<<<<<< HEAD
+=======
+>>>>>>> 9aede6ccb7c215ef9b1100fe59454f598f91af90
 set(BINARY_NAME "productivity_app")
 # The unique GTK application identifier for this application. See:
 # https://wiki.gnome.org/HowDoI/ChooseApplicationID
 set(APPLICATION_ID "com.example.productivity_app")
+=======
+<<<<<<< HEAD
+>>>>>>> 9aede6ccb7c215ef9b1100fe59454f598f91af90
 =======
 >>>>>>> 9aede6ccb7c215ef9b1100fe59454f598f91af90
 set(BINARY_NAME "flutter_application_1")
@@ -18,6 +24,10 @@ set(BINARY_NAME "flutter_application_1")
 # https://wiki.gnome.org/HowDoI/ChooseApplicationID
 set(APPLICATION_ID "com.example.flutter_application_1")
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> be46472 (Initial commit)
+>>>>>>> 9aede6ccb7c215ef9b1100fe59454f598f91af90
 =======
 >>>>>>> be46472 (Initial commit)
 >>>>>>> 9aede6ccb7c215ef9b1100fe59454f598f91af90

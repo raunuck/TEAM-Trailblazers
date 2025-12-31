@@ -1,13 +1,19 @@
 # Project-level configuration.
 cmake_minimum_required(VERSION 3.14)
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 <<<<<<< HEAD
+=======
+>>>>>>> 9aede6ccb7c215ef9b1100fe59454f598f91af90
 project(productivity_app LANGUAGES CXX)
 
 # The name of the executable created for the application. Change this to change
 # the on-disk name of your application.
 set(BINARY_NAME "productivity_app")
+=======
+<<<<<<< HEAD
+>>>>>>> 9aede6ccb7c215ef9b1100fe59454f598f91af90
 =======
 >>>>>>> 9aede6ccb7c215ef9b1100fe59454f598f91af90
 project(flutter_application_1 LANGUAGES CXX)
@@ -16,6 +22,10 @@ project(flutter_application_1 LANGUAGES CXX)
 # the on-disk name of your application.
 set(BINARY_NAME "flutter_application_1")
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> be46472 (Initial commit)
+>>>>>>> 9aede6ccb7c215ef9b1100fe59454f598f91af90
 =======
 >>>>>>> be46472 (Initial commit)
 >>>>>>> 9aede6ccb7c215ef9b1100fe59454f598f91af90

@@ -7,13 +7,19 @@ plugins {
 
 android {
 <<<<<<< HEAD
+<<<<<<< HEAD
     namespace = "com.example.flutter_application_1"
 =======
 <<<<<<< HEAD
+=======
+>>>>>>> 9aede6ccb7c215ef9b1100fe59454f598f91af90
     namespace = "com.example.productivity_app"
 =======
     namespace = "com.example.flutter_application_1"
 >>>>>>> be46472 (Initial commit)
+<<<<<<< HEAD
+>>>>>>> 9aede6ccb7c215ef9b1100fe59454f598f91af90
+=======
 >>>>>>> 9aede6ccb7c215ef9b1100fe59454f598f91af90
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
@@ -30,13 +36,19 @@ android {
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
 <<<<<<< HEAD
+<<<<<<< HEAD
         applicationId = "com.example.flutter_application_1"
 =======
 <<<<<<< HEAD
+=======
+>>>>>>> 9aede6ccb7c215ef9b1100fe59454f598f91af90
         applicationId = "com.example.productivity_app"
 =======
         applicationId = "com.example.flutter_application_1"
 >>>>>>> be46472 (Initial commit)
+<<<<<<< HEAD
+>>>>>>> 9aede6ccb7c215ef9b1100fe59454f598f91af90
+=======
 >>>>>>> 9aede6ccb7c215ef9b1100fe59454f598f91af90
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
