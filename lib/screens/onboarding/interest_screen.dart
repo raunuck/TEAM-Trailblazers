@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/theme.dart'; // Use relative import to avoid path errors
 import '../dashboard/home_screen.dart';
 
+
 class InterestScreen extends StatefulWidget {
   final bool isStudent; // We pass this from the Login Screen
 
@@ -125,6 +126,7 @@ class _InterestScreenState extends State<InterestScreen> {
                         (route) => false, 
                       );
                     },
+
                 child: const Text(
                   "Continue to Dashboard",
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
