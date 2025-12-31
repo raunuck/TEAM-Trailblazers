@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 # productivity_app
-=======
-# flutter_application_1
->>>>>>> be46472 (Initial commit)
 
 A new Flutter project.
 
