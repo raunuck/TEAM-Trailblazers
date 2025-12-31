@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../core/theme.dart'; // Use relative import to avoid path errors
+<<<<<<< HEAD
+=======
+import '../dashboard/home_screen.dart';
+>>>>>>> 9aede6ccb7c215ef9b1100fe59454f598f91af90
 
 class InterestScreen extends StatefulWidget {
   final bool isStudent; // We pass this from the Login Screen
@@ -115,11 +119,23 @@ class _InterestScreenState extends State<InterestScreen> {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: _selected.isEmpty
+<<<<<<< HEAD
                     ? null // Disable button if nothing selected
                     : () {
                         // TODO: Navigate to Dashboard
                         print("Selected: $_selected");
                       },
+=======
+                  ? null
+                  : () {
+                      // Navigate to the Dashboard, removing all previous screens (can't go back to login easily)
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(builder: (context) => const HomeScreen()),
+                        (route) => false, 
+                      );
+                    },
+>>>>>>> 9aede6ccb7c215ef9b1100fe59454f598f91af90
                 child: const Text(
                   "Continue to Dashboard",
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),

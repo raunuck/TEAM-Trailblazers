@@ -1,6 +1,16 @@
 {
+<<<<<<< HEAD
     "name": "flutter_application_1",
     "short_name": "flutter_application_1",
+=======
+<<<<<<< HEAD
+    "name": "productivity_app",
+    "short_name": "productivity_app",
+=======
+    "name": "flutter_application_1",
+    "short_name": "flutter_application_1",
+>>>>>>> be46472 (Initial commit)
+>>>>>>> 9aede6ccb7c215ef9b1100fe59454f598f91af90
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

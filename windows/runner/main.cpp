@@ -27,7 +27,15 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
   FlutterWindow window(project);
   Win32Window::Point origin(10, 10);
   Win32Window::Size size(1280, 720);
+<<<<<<< HEAD
   if (!window.Create(L"flutter_application_1", origin, size)) {
+=======
+<<<<<<< HEAD
+  if (!window.Create(L"productivity_app", origin, size)) {
+=======
+  if (!window.Create(L"flutter_application_1", origin, size)) {
+>>>>>>> be46472 (Initial commit)
+>>>>>>> 9aede6ccb7c215ef9b1100fe59454f598f91af90
     return EXIT_FAILURE;
   }
   window.SetQuitOnClose(true);
