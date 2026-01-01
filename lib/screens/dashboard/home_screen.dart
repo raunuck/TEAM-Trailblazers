@@ -168,7 +168,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   boxShadow: isCancelled ? [] : [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.04),
+                      color: Colors.black.withValues(alpha:0.04),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -241,7 +241,7 @@ class _HomeScreenState extends State<HomeScreen> {
             // Vertical Dashed Line (Visual trick using Container for now)
             Container(
               width: 2,
-              color: AppTheme.growthGreen.withOpacity(0.3),
+              color: AppTheme.growthGreen.withValues(alpha: 0.3),
               margin: const EdgeInsets.symmetric(horizontal: 10),
             ),
 
@@ -252,14 +252,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      AppTheme.growthGreen.withOpacity(0.1), 
+                      AppTheme.growthGreen.withValues(alpha: 0.1), 
                       Colors.white
                     ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppTheme.growthGreen.withOpacity(0.3)),
+                  border: Border.all(color: AppTheme.growthGreen.withValues(alpha:0.3)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -371,7 +371,7 @@ class _SmartGapCardState extends State<SmartGapCard> {
             // --- CENTER: DASHED LINE ---
             Container(
               width: 2,
-              color: const Color(0xFF10B981).withOpacity(0.3),
+              color: const Color(0xFF10B981).withValues(alpha: 0.3),
               margin: const EdgeInsets.symmetric(horizontal: 10),
             ),
 
@@ -382,7 +382,7 @@ class _SmartGapCardState extends State<SmartGapCard> {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      const Color(0xFF10B981).withOpacity(0.1), 
+                      const Color(0xFF10B981).withValues(alpha: 0.1), 
                       Colors.white
                     ],
                     begin: Alignment.topLeft,
@@ -390,7 +390,7 @@ class _SmartGapCardState extends State<SmartGapCard> {
                   ),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: const Color(0xFF10B981).withOpacity(0.3)
+                    color: const Color(0xFF10B981).withValues(alpha: 0.3)
                   ),
                 ),
                 child: Column(
@@ -435,7 +435,7 @@ class _SmartGapCardState extends State<SmartGapCard> {
                         width: double.infinity,
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.6),
+                          color: Colors.white.withValues(alpha: 0.6),
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(color: Colors.white),
                         ),
