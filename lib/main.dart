@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:adaptive_student_time/core/theme.dart';
-import 'package:adaptive_student_time/screens/auth/login_screen.dart';
+import 'screens/main_layout.dart'; // <--- IMPORT THIS (Your frame)
+// import 'screens/dashboard/home_screen.dart'; // <--- REMOVE OR IGNORE THIS
 
 void main() {
   runApp(const MyApp());
@@ -12,10 +12,14 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Adaptive Student Time',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme, // Using our custom theme
-      home: const LoginScreen(),  // Starting with the login screen
+      title: 'Adaptive Student Time',
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF2563EB)),
+        useMaterial3: true,
+      ),
+      // CRITICAL CHANGE: Point to MainLayout, NOT HomeScreen
+      home: const MainLayout(), 
     );
   }
 }
