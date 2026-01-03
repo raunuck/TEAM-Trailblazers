@@ -1,36 +1,158 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/theme.dart';
+import 'create_idea_screen.dart';
 
-class VaultScreen extends StatelessWidget {
+class VaultScreen extends StatefulWidget {
   const VaultScreen({super.key});
 
   @override
+  State<VaultScreen> createState() => _VaultScreenState();
+}
+
+class _VaultScreenState extends State<VaultScreen> {
+  // Stream that listens to the 'ideas' table in real-time
+  final _ideaStream = Supabase.instance.client
+      .from('ideas')
+      .stream(primaryKey: ['id'])
+      .order('created_at', ascending: false);
+
+  @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      appBar: AppBar(title: const Text("Knowledge Vault"), centerTitle: true, automaticallyImplyLeading: false),
-      body: ListView(
-        padding: const EdgeInsets.all(20),
+      appBar: AppBar(
+        title: const Text("Knowledge Vault", style: TextStyle(color: Colors.white)),
+        centerTitle: true,
+        automaticallyImplyLeading: false,
+        backgroundColor: isDark ? const Color(0xFF0A0C1D) : AppTheme.darkBlue,
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const CreateIdeaScreen()),
+        ),
+        backgroundColor: AppTheme.goldAccent,
+        icon: const Icon(Icons.edit, color: AppTheme.darkBlue),
+        label: const Text(
+          "Write Idea",
+          style: TextStyle(color: AppTheme.darkBlue, fontWeight: FontWeight.bold),
+        ),
+      ),
+      body: StreamBuilder<List<Map<String, dynamic>>>(
+        stream: _ideaStream,
+        builder: (context, snapshot) {
+          // 1. Loading State
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator(color: AppTheme.goldAccent));
+          }
+
+          final ideas = snapshot.data!;
+
+          // 2. Empty State
+          if (ideas.isEmpty) {
+            return _buildEmptyState(isDark);
+          }
+
+          // 3. Data State
+          return ListView(
+            padding: const EdgeInsets.all(20),
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.lightbulb_outline, color: AppTheme.goldAccent),
+                  const SizedBox(width: 10),
+                  Text(
+                    "My Startup & Blog Ideas",
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : AppTheme.darkBlue,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 15),
+              ...ideas.map((idea) => _buildIdeaCard(context, idea, isDark)),
+              const SizedBox(height: 80),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildIdeaCard(BuildContext context, Map<String, dynamic> idea, bool isDark) {
+    Color statusColor;
+    switch (idea['status']) {
+      case 'Completed': statusColor = Colors.green; break;
+      case 'In Progress': statusColor = Colors.orange; break;
+      default: statusColor = Colors.grey;
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1C234C) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.goldAccent.withValues(alpha: 0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          )
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildVaultCategory(context, "My Interests", Icons.favorite, ["Computer Architecture", "Data Structures", "Public Speaking"]),
-          const SizedBox(height: 20),
-          _buildVaultCategory(context, "Saved Resources", Icons.bookmark, ["Lecture Notes: Pipelining", "Project Idea: AI Quiz"]),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  idea['title'] ?? '',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: isDark ? Colors.white : AppTheme.darkBlue),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: statusColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: statusColor.withValues(alpha: 0.5)),
+                ),
+                child: Text(idea['status'] ?? '', style: TextStyle(color: statusColor, fontSize: 11, fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            idea['description'] ?? '',
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[700], fontSize: 14),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildVaultCategory(BuildContext context, String title, IconData icon, List<String> items) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(children: [Icon(icon, color: AppTheme.goldAccent), const SizedBox(width: 10), Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold))]),
-        const SizedBox(height: 12),
-        Container(
-          decoration: BoxDecoration(color: isDark ? const Color(0xFF1C234C) : Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppTheme.goldAccent.withValues(alpha: 0.2))),
-          child: Column(children: items.map((item) => ListTile(title: Text(item), trailing: const Icon(Icons.arrow_forward_ios, size: 14))).toList()),
-        )
-      ],
+  Widget _buildEmptyState(bool isDark) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.only(top: 100),
+        child: Column(
+          children: [
+            Icon(Icons.inventory_2_outlined, size: 60, color: Colors.grey.withValues(alpha: 0.3)),
+            const SizedBox(height: 15),
+            Text("Your vault is empty.", style: TextStyle(color: isDark ? Colors.grey : Colors.grey[600], fontSize: 16)),
+          ],
+        ),
+      ),
     );
   }
 }
