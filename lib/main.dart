@@ -1,31 +1,44 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'screens/main_layout.dart'; // <--- IMPORT THIS (Your frame)
-// import 'screens/dashboard/home_screen.dart'; // <--- REMOVE OR IGNORE THIS
+import 'package:intl/date_symbol_data_local.dart';
+import 'core/theme.dart';
+import 'core/theme_controller.dart'; // <--- Import the new controller
+import 'screens/login_screen.dart';
 
-Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await Supabase.initialize(
-    url: 'https://dgramltguzqwpxwwpdyw.supabase.co',
-    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRncmFtbHRndXpxd3B4d3dwZHl3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcwOTExNzgsImV4cCI6MjA4MjY2NzE3OH0.UG09iFMcYbDgPSQ3kKB0T3X4EWJwS11DPjHsdt_W5uw',
-  );
-  runApp(MyApp());
+void main() {
+  initializeDateFormatting().then((_) {
+    runApp(const MyApp());
+  });
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  @override
+  void initState() {
+    super.initState();
+    // Listen to the controller. When it changes, rebuild the app.
+    themeController.addListener(() {
+      setState(() {});
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Adaptive Student Time',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF2563EB)),
-        useMaterial3: true,
-      ),
-      // CRITICAL CHANGE: Point to MainLayout, NOT HomeScreen
-      home: const MainLayout(), 
+      title: 'PlanBEE',
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      
+      // CRITICAL CHANGE: Use the controller's value instead of just 'system'
+      themeMode: themeController.themeMode, 
+      
+      home: const LoginScreen(),
     );
   }
 }
