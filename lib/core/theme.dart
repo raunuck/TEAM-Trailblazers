@@ -1,55 +1,50 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
-  // Colors based on the Academic/Growth concept
-  static const Color primaryBlue = Color(0xFF2563EB); // For academic schedules
-  static const Color growthGreen = Color(0xFF10B981); // For free-time opportunities
-  static const Color background = Color(0xFFF8FAFC);  // Clean off-white
-  static const Color textDark = Color(0xFF1E293B);
+  // --- CORE PALETTE ---
+  static const Color darkBlue = Color(0xFF131635);
+  static const Color goldAccent = Color(0xFFCCA35E);
+  static const Color cardCreamBg = Color(0xFFFDF6E3);
+  static const Color innerBlockBg = Color(0xFFFCEFD0);
+  
+  // --- COMPATIBILITY CONSTANTS ---
+  static const Color textDarkBlue = Color(0xFF131635);
+  static const Color primaryBlue = darkBlue;
+  static const Color background = Color(0xFFF5F5F5);
 
-  static ThemeData get lightTheme {
-    return ThemeData(
-      useMaterial3: true,
-      scaffoldBackgroundColor: background,
-      primaryColor: primaryBlue,
-      
-      // Text Theme using Google Fonts (Poppins)
-      textTheme: GoogleFonts.poppinsTextTheme().apply(
-        bodyColor: textDark,
-        displayColor: textDark,
-      ),
+  // --- LIGHT THEME ---
+  static final ThemeData lightTheme = ThemeData(
+    brightness: Brightness.light,
+    primaryColor: darkBlue,
+    scaffoldBackgroundColor: const Color(0xFFF5F5F5),
+    colorScheme: const ColorScheme.light(
+      primary: darkBlue,
+      secondary: goldAccent,
+      surface: cardCreamBg, 
+      onSurface: darkBlue,
+    ),
+    appBarTheme: const AppBarTheme(
+      backgroundColor: darkBlue,
+      iconTheme: IconThemeData(color: Colors.white),
+    ),
+    useMaterial3: true,
+  );
 
-      // Button Styles
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: primaryBlue,
-          foregroundColor: Colors.white,
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          padding: const EdgeInsets.symmetric(vertical: 16),
-        ),
-      ),
-      
-      // Input Field Styles
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: Colors.white,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade300),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade300),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: primaryBlue, width: 2),
-        ),
-      ),
-    );
-  }
+  // --- DARK THEME ---
+  static final ThemeData darkTheme = ThemeData(
+    brightness: Brightness.dark,
+    primaryColor: darkBlue,
+    scaffoldBackgroundColor: const Color(0xFF0A0C1D),
+    colorScheme: const ColorScheme.dark(
+      primary: goldAccent,
+      secondary: goldAccent,
+      surface: Color(0xFF1C234C),
+      onSurface: Color(0xFFE0E0E0),
+    ),
+    appBarTheme: const AppBarTheme(
+      backgroundColor: Color(0xFF0A0C1D),
+      iconTheme: IconThemeData(color: goldAccent),
+    ),
+    useMaterial3: true,
+  );
 }

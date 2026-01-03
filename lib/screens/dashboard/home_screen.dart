@@ -1,174 +1,95 @@
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../../core/theme.dart';
-import '../../services/ai_service.dart';
 import '../../services/calendar_service.dart';
 
-class SmartGapCard extends StatefulWidget {
+// ==========================================
+// 1. SMART GAP CARD WIDGET
+// ==========================================
+class SmartGapCard extends StatelessWidget {
   final Map<String, dynamic> item;
-  
+
   const SmartGapCard({super.key, required this.item});
 
   @override
-  State<SmartGapCard> createState() => _SmartGapCardState();
-}
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = Theme.of(context).colorScheme.surface;
+    final textColor = Theme.of(context).colorScheme.onSurface;
+    final innerBlockColor = isDark ? const Color(0xFF2A325E) : const Color(0xFFFCEFD0);
 
-class _SmartGapCardState extends State<SmartGapCard> {
-  String? _aiSuggestion;
-  bool _isLoading = false;
-
-  void _askAI() async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    String mockDuration = widget.item['endTime'] == "11:30" ? "1h 30m" : "45m"; 
-
-    // 2. Call the AI Service
-    String result = await AIService.generateSmartTask(
-      duration: mockDuration, 
-      interests: ["Flutter Dev", "AI Tools", "Public Speaking"],
-      academicSubject: "Computer Architecture",
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 12),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.auto_awesome, color: textColor, size: 20),
+              const SizedBox(width: 8),
+              Text("Free Slot Detected", style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 18)),
+              const SizedBox(width: 8),
+              Icon(Icons.hive, color: textColor, size: 20),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.psychology, color: AppTheme.goldAccent, size: 32),
+              const SizedBox(width: 12),
+              Text("Deep Work Block", style: TextStyle(color: textColor, fontWeight: FontWeight.w900, fontSize: 24)),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(flex: 3, child: _buildTimelineBlock(color: innerBlockColor, textColor: textColor, icon: Icons.laptop_mac, time: "36 min", title: "Study")),
+              Container(
+                height: 80, 
+                alignment: Alignment.center, 
+                width: 30, 
+                child: Icon(Icons.more_horiz, color: AppTheme.goldAccent.withOpacity(0.5))
+              ),
+              Expanded(flex: 3, child: _buildTimelineBlock(color: innerBlockColor, textColor: textColor, icon: Icons.campaign, time: "36 min", title: "Project")),
+            ],
+          ),
+        ],
+      ),
     );
-
-    // 3. Update UI
-    setState(() {
-      _aiSuggestion = result;
-      _isLoading = false;
-    });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 20.0),
-      // Removing IntrinsicHeight helps avoid the pixel overflow error
-      // The row will naturally grow to fit the tallest item (the text card)
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildTimelineBlock({required Color color, required Color textColor, required IconData icon, required String time, required String title}) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(16)),
+      child: Column(
         children: [
-          // --- LEFT COLUMN: TIME ---
-          SizedBox(
-            width: 50,
-            child: Text(
-              widget.item['time'],
-              style: const TextStyle(
-                fontWeight: FontWeight.bold, 
-                fontSize: 16, 
-                color: Color(0xFF10B981) // Growth Green
-              ),
-            ),
-          ),
-          
-          // --- CENTER: DASHED LINE ---
-          // We wrap this in a Container with a fixed height or let it follow the parent
-          // Without IntrinsicHeight, we use a custom approach or just a small marker
-          Container(
-            width: 2,
-            height: 100, // Fixed height ensures no crash, or remove height to let it shrink
-            color: const Color(0xFF10B981).withOpacity(0.3),
-            margin: const EdgeInsets.symmetric(horizontal: 10),
-          ),
-
-          // --- RIGHT COLUMN: THE CARD ---
-          Expanded(
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    const Color(0xFF10B981).withOpacity(0.1), 
-                    Colors.white
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: const Color(0xFF10B981).withOpacity(0.3)
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min, // <--- CRITICAL FIX
-                children: [
-                  // Header Row
-                  Row(
-                    children: [
-                      const Icon(Icons.auto_awesome, color: Colors.orange, size: 20),
-                      const SizedBox(width: 8),
-                      Text(
-                        "Free Slot Detected",
-                        style: TextStyle(
-                          color: Colors.green.shade800,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  
-                  // --- DYNAMIC CONTENT AREA ---
-                  if (_isLoading)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 10),
-                      child: Row(
-                        children: [
-                          SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
-                          SizedBox(width: 12),
-                          Text("Designing your schedule...", style: TextStyle(color: Colors.grey)),
-                        ],
-                      ),
-                    )
-                  else if (_aiSuggestion != null)
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.6),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      // Using SelectableText allows scrolling if it gets REALLY long
-                      child: Text(
-                        _aiSuggestion!.replaceAll("**", ""), // Clean up the asterisks
-                        style: const TextStyle(
-                          fontSize: 14, 
-                          height: 1.5, 
-                          color: Colors.black87,
-                        ),
-                      ),
-                    )
-                  else
-                    const Text(
-                      "You have free time available. Tap below to generate a productivity plan.",
-                      style: TextStyle(fontSize: 14, color: Colors.black87),
-                    ),
-
-                  const SizedBox(height: 12),
-                  
-                  // --- BUTTON ---
-                  if (_aiSuggestion == null && !_isLoading)
-                    ElevatedButton.icon(
-                      onPressed: _askAI,
-                      icon: const Icon(Icons.bolt, size: 18),
-                      label: const Text("Generate Smart Plan"),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: const Color(0xFF10B981),
-                        elevation: 0,
-                        side: const BorderSide(color: Color(0xFF10B981)),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ),
+          Icon(icon, size: 24, color: textColor),
+          const SizedBox(height: 8),
+          Text(title, style: TextStyle(fontWeight: FontWeight.bold, color: textColor)),
         ],
       ),
     );
   }
 }
 
+// ==========================================
+// 2. HOME SCREEN PAGE
+// ==========================================
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -178,134 +99,146 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   bool _isSyncing = false;
-  // Add this variable at the top of _HomeScreenState
-  final CalendarService _calendarService = CalendarService(); 
+  final CalendarService _calendarService = CalendarService();
+  
+  // Calendar State
+  DateTime _focusedDay = DateTime.now();
+  DateTime? _selectedDay;
+  CalendarFormat _calendarFormat = CalendarFormat.week; // We use Week view for space
+
+  // Mock Data (Overwritten by Sync)
+  final List<Map<String, dynamic>> _schedule = [
+    {"time": "09:00", "endTime": "10:30", "title": "Computer Arch", "type": "class", "location": "Lab 3"},
+    {"time": "10:30", "endTime": "11:30", "title": "Free Slot", "type": "gap"},
+    {"time": "11:30", "endTime": "12:30", "title": "Database Sys", "type": "class", "location": "Room 404"},
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedDay = _focusedDay;
+  }
 
   Future<void> _syncCalendar() async {
     setState(() => _isSyncing = true);
-
     try {
-      final fetchedEvents = await _calendarService.fetchCalendarEvents();
-
+      final fetchedEvents = await _calendarService.fetchCalendarEvents(_selectedDay ?? DateTime.now());
       if (fetchedEvents != null) {
         setState(() {
-          _schedule.clear(); // Remove the mock/fake data
-          _schedule.addAll(fetchedEvents); // Add real Google data
+          _schedule.clear();
+          _schedule.addAll(fetchedEvents);
         });
-        
-        if (fetchedEvents.isEmpty) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Sync successful, but no events found for today.")),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Sync Complete! Schedule updated.")),
-          );
-        }
-      } 
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Sync Complete!")));
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Sync failed: $e")),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Sync failed: $e")));
     } finally {
       setState(() => _isSyncing = false);
     }
   }
-  CalendarFormat _calendarFormat = CalendarFormat.week; // Defaults to Week view
-  DateTime _focusedDay = DateTime.now();
-  DateTime? _selectedDay;
-
-  // Mock Schedule Data (In real app, fetch from Google API based on _selectedDay)
-  final List<Map<String, dynamic>> _schedule = [
-    {"time": "09:00", "endTime": "10:30", "title": "Computer Architecture", "type": "class", "status": "active"},
-    {"time": "10:30", "endTime": "11:30", "title": "Free Slot", "type": "gap", "suggestion": "Review Pipelining"},
-    {"time": "11:30", "endTime": "12:30", "title": "Database Systems", "type": "class", "status": "active"},
-  ];
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = Theme.of(context).colorScheme.onSurface;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text("My Schedule", style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.white,
-        elevation: 0,
+        title: const Text("PlanBEE", style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+        centerTitle: true,
         actions: [
-          IconButton(icon: const Icon(Icons.sync), onPressed: () {
-            // TODO: Trigger Google Calendar Sync
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Syncing with Google Calendar...")));
-          }),
+          IconButton(
+            icon: Icon(_isSyncing ? Icons.hourglass_top : Icons.sync),
+            onPressed: _syncCalendar,
+          ),
         ],
       ),
       body: Column(
         children: [
-          // 1. THE GOOGLE CALENDAR UI STRIP
-          Container(
-            color: Colors.white,
-            padding: const EdgeInsets.only(bottom: 10),
-            child: TableCalendar(
-              firstDay: DateTime.utc(2020, 10, 16),
-              lastDay: DateTime.utc(2030, 3, 14),
-              focusedDay: _focusedDay,
-              calendarFormat: _calendarFormat,
-              
-              // Style it to look like Google Calendar
-              calendarStyle: const CalendarStyle(
-                selectedDecoration: BoxDecoration(color: AppTheme.primaryBlue, shape: BoxShape.circle),
-                todayDecoration: BoxDecoration(color: Colors.orange, shape: BoxShape.circle),
-                markerDecoration: BoxDecoration(color: Colors.grey, shape: BoxShape.circle),
-              ),
-              headerStyle: const HeaderStyle(
-                formatButtonVisible: true,
-                titleCentered: true,
-                formatButtonShowsNext: false,
-              ),
-
-              selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
-              onDaySelected: (selectedDay, focusedDay) {
-                setState(() {
-                  _selectedDay = selectedDay;
-                  _focusedDay = focusedDay; 
-                  // Here is where you would fetch new events for the selected day
-                });
-              },
-              onFormatChanged: (format) {
-                setState(() {
-                  _calendarFormat = format; // Switch between Week / 2 Weeks / Month
-                });
-              },
+          // --- RESTORED CALENDAR WIDGET ---
+          TableCalendar(
+            firstDay: DateTime.utc(2024, 1, 1),
+            lastDay: DateTime.utc(2030, 12, 31),
+            focusedDay: _focusedDay,
+            calendarFormat: _calendarFormat,
+            selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+            onDaySelected: (selectedDay, focusedDay) {
+              setState(() {
+                _selectedDay = selectedDay;
+                _focusedDay = focusedDay;
+              });
+              _syncCalendar(); // Fetch data for the new day
+            },
+            onFormatChanged: (format) {
+               if (_calendarFormat != format) setState(() => _calendarFormat = format);
+            },
+            calendarStyle: CalendarStyle(
+              selectedDecoration: const BoxDecoration(color: AppTheme.goldAccent, shape: BoxShape.circle),
+              todayDecoration: BoxDecoration(color: AppTheme.goldAccent.withOpacity(0.5), shape: BoxShape.circle),
+              defaultTextStyle: TextStyle(color: textColor),
+              weekendTextStyle: TextStyle(color: textColor.withOpacity(0.6)),
+            ),
+            headerStyle: HeaderStyle(
+              formatButtonVisible: false,
+              titleCentered: true,
+              titleTextStyle: TextStyle(color: textColor, fontSize: 16, fontWeight: FontWeight.bold),
+              leftChevronIcon: Icon(Icons.chevron_left, color: textColor),
+              rightChevronIcon: Icon(Icons.chevron_right, color: textColor),
             ),
           ),
+          
+          const Divider(),
 
-          const Divider(height: 1),
-
-          // 2. THE TIMELINE LIST
+          // --- SCHEDULE LIST ---
           Expanded(
             child: ListView.builder(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(16),
               itemCount: _schedule.length,
               itemBuilder: (context, index) {
                 final item = _schedule[index];
+
                 if (item['type'] == 'gap') {
-                  return SmartGapCard(item: item); // Uses the AI card we built
-                } else {
-                  return _buildClassCard(item);
+                  return SmartGapCard(item: item);
                 }
+
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1C234C) : Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AppTheme.goldAccent.withOpacity(0.3)),
+                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4))],
+                  ),
+                  child: Row(
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(item['time'] ?? "00:00", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.goldAccent)),
+                          Text(item['endTime'] ?? "00:00", style: TextStyle(fontSize: 14, color: textColor.withOpacity(0.5))),
+                        ],
+                      ),
+                      const SizedBox(width: 20),
+                      Container(height: 40, width: 2, color: AppTheme.goldAccent.withOpacity(0.2)),
+                      const SizedBox(width: 20),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(item['title'] ?? "Untitled", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textColor)),
+                            Text(item['location'] ?? "Unknown", style: TextStyle(fontSize: 14, color: textColor.withOpacity(0.6))),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                );
               },
             ),
           ),
         ],
       ),
     );
-  }
-
-  // (Include _buildClassCard code here from previous steps)
-  Widget _buildClassCard(Map<String, dynamic> item) {
-    // ... Copy the code from the previous HomeScreen ...
-    return Container(
-      padding: const EdgeInsets.all(16), 
-      margin: const EdgeInsets.only(bottom: 16),
-      color: Colors.white, 
-      child: Text(item['title'])
-    ); // Placeholder for brevity
   }
 }
