@@ -27,7 +27,7 @@ class VaultScreen extends StatelessWidget {
         Row(children: [Icon(icon, color: AppTheme.goldAccent), const SizedBox(width: 10), Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold))]),
         const SizedBox(height: 12),
         Container(
-          decoration: BoxDecoration(color: isDark ? const Color(0xFF1C234C) : Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppTheme.goldAccent.withOpacity(0.2))),
+          decoration: BoxDecoration(color: isDark ? const Color(0xFF1C234C) : Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppTheme.goldAccent.withValues(alpha: 0.2))),
           child: Column(children: items.map((item) => ListTile(title: Text(item), trailing: const Icon(Icons.arrow_forward_ios, size: 14))).toList()),
         )
       ],
