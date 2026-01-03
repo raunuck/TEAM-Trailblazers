@@ -2,10 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../../core/theme.dart';
 import '../../services/calendar_service.dart';
-
-// ==========================================
-// 1. SMART GAP CARD WIDGET
-// ==========================================
+import '../../core/theme_controller.dart'; 
 class SmartGapCard extends StatelessWidget {
   final Map<String, dynamic> item;
 
@@ -87,9 +84,6 @@ class SmartGapCard extends StatelessWidget {
   }
 }
 
-// ==========================================
-// 2. HOME SCREEN PAGE
-// ==========================================
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -101,12 +95,10 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isSyncing = false;
   final CalendarService _calendarService = CalendarService();
   
-  // Calendar State
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
-  CalendarFormat _calendarFormat = CalendarFormat.week; // We use Week view for space
+  CalendarFormat _calendarFormat = CalendarFormat.week; 
 
-  // Mock Data (Overwritten by Sync)
   final List<Map<String, dynamic>> _schedule = [
     {"time": "09:00", "endTime": "10:30", "title": "Computer Arch", "type": "class", "location": "Lab 3"},
     {"time": "10:30", "endTime": "11:30", "title": "Free Slot", "type": "gap"},
@@ -148,6 +140,17 @@ class _HomeScreenState extends State<HomeScreen> {
         centerTitle: true,
         actions: [
           IconButton(
+            // If dark, show Sun icon. If light, show Moon icon.
+            icon: Icon(Theme.of(context).brightness == Brightness.dark 
+                ? Icons.light_mode 
+                : Icons.dark_mode
+            ),
+            onPressed: () {
+              // Call our global controller
+              themeController.toggleTheme();
+            },
+          ),
+          IconButton(
             icon: Icon(_isSyncing ? Icons.hourglass_top : Icons.sync),
             onPressed: _syncCalendar,
           ),
@@ -170,7 +173,7 @@ class _HomeScreenState extends State<HomeScreen> {
               _syncCalendar(); // Fetch data for the new day
             },
             onFormatChanged: (format) {
-               if (_calendarFormat != format) setState(() => _calendarFormat = format);
+              if (_calendarFormat != format) setState(() => _calendarFormat = format);
             },
             calendarStyle: CalendarStyle(
               selectedDecoration: const BoxDecoration(color: AppTheme.goldAccent, shape: BoxShape.circle),
@@ -189,7 +192,6 @@ class _HomeScreenState extends State<HomeScreen> {
           
           const Divider(),
 
-          // --- SCHEDULE LIST ---
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.all(16),

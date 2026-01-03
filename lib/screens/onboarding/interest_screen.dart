@@ -43,7 +43,7 @@ class _InterestScreenState extends State<InterestScreen> {
                   : "What subjects do you teach?",
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: AppTheme.textDark,
+                    color: AppTheme.textDarkBlue,
                   ),
             ),
             const SizedBox(height: 12),
@@ -90,11 +90,11 @@ class _InterestScreenState extends State<InterestScreen> {
                         ),
                         boxShadow: isSelected
                             ? [
-                                BoxShadow(
-                                  color: AppTheme.primaryBlue.withValues(alpha:0.3),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 4),
-                                )
+                              BoxShadow(
+                                color: AppTheme.primaryBlue.withValues(alpha: 0.3), // Updated syntax
+                                blurRadius: 8,
+                                offset: const Offset(0, 4),
+                              ),
                               ]
                             : [],
                       ),
