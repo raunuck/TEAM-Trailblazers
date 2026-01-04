@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../core/theme.dart'; // Use relative import to avoid path errors
-import '../dashboard/home_screen.dart';
-
+import '../../core/theme.dart';
+import '../../screens/main_layout.dart'; 
 
 class InterestScreen extends StatefulWidget {
-  final bool isStudent; // We pass this from the Login Screen
+  final bool isStudent;
 
   const InterestScreen({super.key, required this.isStudent});
 
@@ -13,19 +12,18 @@ class InterestScreen extends StatefulWidget {
 }
 
 class _InterestScreenState extends State<InterestScreen> {
-  // Hardcoded list of interests for now (SRS Requirement 3.5)
   final List<String> _interests = [
     "Coding", "Design", "Public Speaking", 
     "Writing", "Marketing", "Finance", 
     "Photography", "Wellness", "AI Tools"
   ];
 
-  // This set stores what the user has clicked
   final Set<String> _selected = {};
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white, // Explicit background color is safer
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -43,7 +41,7 @@ class _InterestScreenState extends State<InterestScreen> {
                   : "What subjects do you teach?",
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: AppTheme.textDarkBlue,
+                    color: AppTheme.darkBlue, // Ensure this matches your theme variable name
                   ),
             ),
             const SizedBox(height: 12),
@@ -59,8 +57,8 @@ class _InterestScreenState extends State<InterestScreen> {
             Expanded(
               child: GridView.builder(
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2, // 2 items per row
-                  childAspectRatio: 2.5, // Shape of the button (width/height)
+                  crossAxisCount: 2,
+                  childAspectRatio: 2.5,
                   crossAxisSpacing: 12,
                   mainAxisSpacing: 12,
                 ),
@@ -90,11 +88,13 @@ class _InterestScreenState extends State<InterestScreen> {
                         ),
                         boxShadow: isSelected
                             ? [
-                              BoxShadow(
-                                color: AppTheme.primaryBlue.withValues(alpha: 0.3), // Updated syntax
-                                blurRadius: 8,
-                                offset: const Offset(0, 4),
-                              ),
+                                BoxShadow(
+                                  // Note: 'withValues' is for Flutter 3.27+. 
+                                  // If you get an error, use .withOpacity(0.3)
+                                  color: AppTheme.primaryBlue.withOpacity(0.3), 
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 4),
+                                ),
                               ]
                             : [],
                       ),
@@ -111,25 +111,38 @@ class _InterestScreenState extends State<InterestScreen> {
                 },
               ),
             ),
+            
+            const SizedBox(height: 16),
 
-            // Continue Button
+            // FIXED: Complete "Continue" Button
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: _selected.isEmpty
-                  ? null
-                  : () {
-                      // Navigate to the Dashboard, removing all previous screens (can't go back to login easily)
-                      Navigator.pushAndRemoveUntil(
-                        context,
-                        MaterialPageRoute(builder: (context) => const HomeScreen()),
-                        (route) => false, 
-                      );
-                    },
+                onPressed: () {
+                  // Optional: Add validation here (e.g., must select at least 1)
+                  if (_selected.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Please select at least one interest")),
+                    );
+                    return;
+                  }
 
+                  Navigator.pushAndRemoveUntil(
+                    context, 
+                    MaterialPageRoute(builder: (context) => const MainLayout()), 
+                    (route) => false
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryBlue,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
                 child: const Text(
-                  "Continue to Dashboard",
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  "Continue",
+                  style: TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold),
                 ),
               ),
             ),

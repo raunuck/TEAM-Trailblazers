@@ -6,6 +6,7 @@ import 'screens/login_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'screens/vault/vault_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'screens/onboarding/welcome_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -58,7 +59,7 @@ class _MyAppState extends State<MyApp> {
       // CRITICAL CHANGE: Use the controller's value instead of just 'system'
       themeMode: themeController.themeMode, 
       
-      home: const LoginScreen(),
+      home: const WelcomeScreen(),
     );
   }
 }

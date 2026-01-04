@@ -2,88 +2,32 @@ import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../../core/theme.dart';
 import '../../services/calendar_service.dart';
-import '../../core/theme_controller.dart'; 
-class SmartGapCard extends StatelessWidget {
-  final Map<String, dynamic> item;
+import '../../core/theme_controller.dart';
 
-  const SmartGapCard({super.key, required this.item});
+// --- 1. DATA MODEL (State Management) ---
+enum TaskStatus { scheduled, free, cancelled }
 
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardColor = Theme.of(context).colorScheme.surface;
-    final textColor = Theme.of(context).colorScheme.onSurface;
-    final innerBlockColor = isDark ? const Color(0xFF2A325E) : const Color(0xFFFCEFD0);
+class ScheduleTask {
+  String id;
+  String time;
+  String endTime;
+  String title;
+  String location;
+  TaskStatus status;
+  String? description;
 
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 12),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
-            blurRadius: 15,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.auto_awesome, color: textColor, size: 20),
-              const SizedBox(width: 8),
-              Text("Free Slot Detected", style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 18)),
-              const SizedBox(width: 8),
-              Icon(Icons.hive, color: textColor, size: 20),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.psychology, color: AppTheme.goldAccent, size: 32),
-              const SizedBox(width: 12),
-              Text("Deep Work Block", style: TextStyle(color: textColor, fontWeight: FontWeight.w900, fontSize: 24)),
-            ],
-          ),
-          const SizedBox(height: 20),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(flex: 3, child: _buildTimelineBlock(color: innerBlockColor, textColor: textColor, icon: Icons.laptop_mac, time: "36 min", title: "Study")),
-              Container(
-                height: 80, 
-                alignment: Alignment.center, 
-                width: 30, 
-                child: Icon(Icons.more_horiz, color: AppTheme.goldAccent.withOpacity(0.5))
-              ),
-              Expanded(flex: 3, child: _buildTimelineBlock(color: innerBlockColor, textColor: textColor, icon: Icons.campaign, time: "36 min", title: "Project")),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTimelineBlock({required Color color, required Color textColor, required IconData icon, required String time, required String title}) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(16)),
-      child: Column(
-        children: [
-          Icon(icon, size: 24, color: textColor),
-          const SizedBox(height: 8),
-          Text(title, style: TextStyle(fontWeight: FontWeight.bold, color: textColor)),
-        ],
-      ),
-    );
-  }
+  ScheduleTask({
+    required this.id,
+    required this.time,
+    required this.endTime,
+    required this.title,
+    this.location = "",
+    this.status = TaskStatus.scheduled,
+    this.description,
+  });
 }
 
+// --- 2. THE MAIN SCREEN ---
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -99,10 +43,11 @@ class _HomeScreenState extends State<HomeScreen> {
   DateTime? _selectedDay;
   CalendarFormat _calendarFormat = CalendarFormat.week; 
 
-  final List<Map<String, dynamic>> _schedule = [
-    {"time": "09:00", "endTime": "10:30", "title": "Computer Arch", "type": "class", "location": "Lab 3"},
-    {"time": "10:30", "endTime": "11:30", "title": "Free Slot", "type": "gap"},
-    {"time": "11:30", "endTime": "12:30", "title": "Database Sys", "type": "class", "location": "Room 404"},
+  // Initial Mock Data converted to Model
+  final List<ScheduleTask> _schedule = [
+    ScheduleTask(id: '1', time: "09:00", endTime: "10:30", title: "Computer Arch", location: "Lab 3"),
+    ScheduleTask(id: '2', time: "10:30", endTime: "11:30", title: "Free Slot", status: TaskStatus.free),
+    ScheduleTask(id: '3', time: "11:30", endTime: "12:30", title: "Database Sys", location: "Room 404"),
   ];
 
   @override
@@ -111,22 +56,45 @@ class _HomeScreenState extends State<HomeScreen> {
     _selectedDay = _focusedDay;
   }
 
+  // --- LOGIC: Cancel Class ---
+  void _cancelTask(int index) {
+    setState(() {
+      _schedule[index].status = TaskStatus.free;
+      _schedule[index].title = "Free Slot";
+      _schedule[index].location = "Available";
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Class cancelled. Time slot freed up!")),
+    );
+  }
+
+  // --- LOGIC: AI Suggestions ---
+  void _openAISuggestions(int index) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) => _AISuggestionSheet(
+        timeSlot: "${_schedule[index].time} - ${_schedule[index].endTime}",
+        onSelect: (newTitle, newDesc) {
+          setState(() {
+            _schedule[index].title = newTitle;
+            _schedule[index].description = newDesc;
+            _schedule[index].location = "Self Study / Library";
+            _schedule[index].status = TaskStatus.scheduled; 
+          });
+          Navigator.pop(context);
+        },
+      ),
+    );
+  }
+
   Future<void> _syncCalendar() async {
     setState(() => _isSyncing = true);
-    try {
-      final fetchedEvents = await _calendarService.fetchCalendarEvents(_selectedDay ?? DateTime.now());
-      if (fetchedEvents != null) {
-        setState(() {
-          _schedule.clear();
-          _schedule.addAll(fetchedEvents);
-        });
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Sync Complete!")));
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Sync failed: $e")));
-    } finally {
-      setState(() => _isSyncing = false);
-    }
+    // Simulate network delay
+    await Future.delayed(const Duration(seconds: 1));
+    setState(() => _isSyncing = false);
+    // In real app: Map fetched events to ScheduleTask objects here
   }
 
   @override
@@ -136,29 +104,31 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("PlanBEE", style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+        title: Text(
+          "PlanBEE", 
+          style: TextStyle(
+            fontWeight: FontWeight.bold, 
+            letterSpacing: 1.2,
+            color: isDark ? Colors.white : AppTheme.darkBlue 
+          )
+        ),
         centerTitle: true,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        elevation: 0,
         actions: [
           IconButton(
-            // If dark, show Sun icon. If light, show Moon icon.
-            icon: Icon(Theme.of(context).brightness == Brightness.dark 
-                ? Icons.light_mode 
-                : Icons.dark_mode
-            ),
-            onPressed: () {
-              // Call our global controller
-              themeController.toggleTheme();
-            },
+            icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode, color: textColor),
+            onPressed: () => themeController.toggleTheme(),
           ),
           IconButton(
-            icon: Icon(_isSyncing ? Icons.hourglass_top : Icons.sync),
+            icon: Icon(_isSyncing ? Icons.hourglass_top : Icons.sync, color: textColor),
             onPressed: _syncCalendar,
           ),
         ],
       ),
       body: Column(
         children: [
-          // --- RESTORED CALENDAR WIDGET ---
+          // --- CALENDAR WIDGET ---
           TableCalendar(
             firstDay: DateTime.utc(2024, 1, 1),
             lastDay: DateTime.utc(2030, 12, 31),
@@ -170,7 +140,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 _selectedDay = selectedDay;
                 _focusedDay = focusedDay;
               });
-              _syncCalendar(); // Fetch data for the new day
+              _syncCalendar();
             },
             onFormatChanged: (format) {
               if (_calendarFormat != format) setState(() => _calendarFormat = format);
@@ -192,53 +162,237 @@ class _HomeScreenState extends State<HomeScreen> {
           
           const Divider(),
 
+          // --- TASK LIST ---
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.all(16),
               itemCount: _schedule.length,
               itemBuilder: (context, index) {
-                final item = _schedule[index];
+                final task = _schedule[index];
 
-                if (item['type'] == 'gap') {
-                  return SmartGapCard(item: item);
+                // 1. If it's a Free Slot (User cancelled or empty)
+                if (task.status == TaskStatus.free) {
+                  return _buildFreeSlotCard(task, index);
                 }
 
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 16),
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF1C234C) : Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: AppTheme.goldAccent.withOpacity(0.3)),
-                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4))],
-                  ),
-                  child: Row(
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(item['time'] ?? "00:00", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.goldAccent)),
-                          Text(item['endTime'] ?? "00:00", style: TextStyle(fontSize: 14, color: textColor.withOpacity(0.5))),
-                        ],
-                      ),
-                      const SizedBox(width: 20),
-                      Container(height: 40, width: 2, color: AppTheme.goldAccent.withOpacity(0.2)),
-                      const SizedBox(width: 20),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(item['title'] ?? "Untitled", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textColor)),
-                            Text(item['location'] ?? "Unknown", style: TextStyle(fontSize: 14, color: textColor.withOpacity(0.6))),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                );
+                // 2. If it's a Normal Scheduled Task
+                return _buildTaskCard(task, index, isDark, textColor);
               },
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  // --- WIDGET: Standard Task Card with 3-Dots ---
+  Widget _buildTaskCard(ScheduleTask task, int index, bool isDark, Color textColor) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1C234C) : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppTheme.goldAccent.withOpacity(0.3)),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4))],
+      ),
+      child: Row(
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(task.time, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.goldAccent)),
+              Text(task.endTime, style: TextStyle(fontSize: 14, color: textColor.withOpacity(0.5))),
+            ],
+          ),
+          const SizedBox(width: 20),
+          Container(height: 40, width: 2, color: AppTheme.goldAccent.withOpacity(0.2)),
+          const SizedBox(width: 20),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(task.title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textColor)),
+                Text(task.location, style: TextStyle(fontSize: 14, color: textColor.withOpacity(0.6))),
+                if (task.description != null) // Show description if added by AI
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4.0),
+                    child: Text(task.description!, style: TextStyle(fontSize: 12, color: AppTheme.goldAccent, fontStyle: FontStyle.italic)),
+                  )
+              ],
+            ),
+          ),
+          // --- THE 3 DOTS MENU ---
+          PopupMenuButton<String>(
+            icon: Icon(Icons.more_vert, color: textColor.withOpacity(0.5)),
+            onSelected: (value) {
+              if (value == 'cancel') _cancelTask(index);
+            },
+            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+              const PopupMenuItem<String>(
+                value: 'cancel',
+                child: Row(
+                  children: [
+                    Icon(Icons.cancel_outlined, color: Colors.red, size: 20),
+                    SizedBox(width: 8),
+                    Text('Cancel Class', style: TextStyle(color: Colors.red)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- WIDGET: Free Slot Card with AI Button ---
+  Widget _buildFreeSlotCard(ScheduleTask task, int index) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 12),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF2A325E) : const Color(0xFFFCEFD0), // Using your "Gap" colors
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppTheme.goldAccent.withOpacity(0.5), style: BorderStyle.solid),
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.auto_awesome, color: AppTheme.goldAccent, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    "Free Slot (${task.time})", 
+                    style: TextStyle(
+                      color: isDark ? Colors.white : Colors.black87, 
+                      fontWeight: FontWeight.bold, 
+                      fontSize: 16
+                    )
+                  ),
+                ],
+              ),
+              // AI Button
+              ElevatedButton.icon(
+                onPressed: () => _openAISuggestions(index),
+                icon: const Icon(Icons.psychology, size: 16, color: Colors.white),
+                label: const Text("Plan with AI"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.goldAccent,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))
+                ),
+              )
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            "You have this time free. Let AI suggest a productive task or a break.",
+            style: TextStyle(color: isDark ? Colors.white70 : Colors.black54, fontSize: 13),
+          )
+        ],
+      ),
+    );
+  }
+}
+
+// --- 3. AI SUGGESTION SHEET ---
+class _AISuggestionSheet extends StatefulWidget {
+  final String timeSlot;
+  final Function(String title, String desc) onSelect;
+
+  const _AISuggestionSheet({required this.timeSlot, required this.onSelect});
+
+  @override
+  State<_AISuggestionSheet> createState() => _AISuggestionSheetState();
+}
+
+class _AISuggestionSheetState extends State<_AISuggestionSheet> {
+  bool _isLoading = true;
+  List<Map<String, String>> _suggestions = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchSuggestions();
+  }
+
+  Future<void> _fetchSuggestions() async {
+    await Future.delayed(const Duration(seconds: 2)); // Mock AI Delay
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+        _suggestions = [
+          {"title": "Deep Work Block", "desc": "Focus on your hardest project for 45 mins."},
+          {"title": "Quick Revision", "desc": "Review notes from Computer Architecture."},
+          {"title": "Mental Reset", "desc": "Take a walk or meditate to recharge."},
+        ];
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    return Container(
+      padding: const EdgeInsets.all(24),
+      height: 400,
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text("Suggestions for ${widget.timeSlot}", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black)),
+              const Spacer(),
+              IconButton(
+                onPressed: () => Navigator.pop(context), 
+                icon: Icon(Icons.close, color: isDark ? Colors.white : Colors.grey)
+              )
+            ],
+          ),
+          const SizedBox(height: 20),
+          if (_isLoading)
+            const Center(child: CircularProgressIndicator(color: AppTheme.goldAccent))
+          else
+            Expanded(
+              child: ListView.builder(
+                itemCount: _suggestions.length,
+                itemBuilder: (context, index) {
+                  final item = _suggestions[index];
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    elevation: 0,
+                    color: isDark ? Colors.grey[800] : Colors.grey.shade50,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(color: isDark ? Colors.transparent : Colors.grey.shade200),
+                    ),
+                    child: ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: AppTheme.goldAccent.withOpacity(0.1),
+                        child: const Icon(Icons.lightbulb_outline, color: AppTheme.goldAccent, size: 20),
+                      ),
+                      title: Text(item['title']!, style: TextStyle(fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black)),
+                      subtitle: Text(item['desc']!, style: TextStyle(fontSize: 12, color: isDark ? Colors.white70 : Colors.black54)),
+                      trailing: Icon(Icons.add_circle_outline, color: isDark ? Colors.white : Colors.black),
+                      onTap: () => widget.onSelect(item['title']!, item['desc']!),
+                    ),
+                  );
+                },
+              ),
+            )
         ],
       ),
     );
