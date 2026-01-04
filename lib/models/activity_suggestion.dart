@@ -1,0 +1,292 @@
+class ActivitySuggestion {
+  final String id;
+  final String title;
+  final String description;
+  final String category;
+  final int minDuration;
+  final String type; // "Productive" or "Rest"
+  final String resourceUrl;
+  final String resourceType; // "Video", "Practice", "Article", "Audio"
+
+  ActivitySuggestion({
+    required this.id,
+    required this.title,
+    required this.description,
+    required this.category,
+    required this.minDuration,
+    required this.type,
+    required this.resourceUrl,
+    required this.resourceType,
+  });
+}
+
+// --- THE COMPLETE KNOWLEDGE BASE ---
+final List<ActivitySuggestion> taskLibrary = [
+  // ================== 1. CODING ==================
+  ActivitySuggestion(
+    id: 'c1',
+    title: 'Two Sum (LeetCode)',
+    description: 'Solve the classic interview problem in Python/Java.',
+    category: 'Coding',
+    minDuration: 20,
+    type: 'Productive',
+    resourceUrl: 'https://leetcode.com/problems/two-sum/',
+    resourceType: 'Practice',
+  ),
+  ActivitySuggestion(
+    id: 'c2',
+    title: 'Clean Code Principles',
+    description: 'Watch this crash course on writing readable code.',
+    category: 'Coding',
+    minDuration: 15,
+    type: 'Productive',
+    resourceUrl: 'https://www.youtube.com/watch?v=7EmboKQH8lM',
+    resourceType: 'Video',
+  ),
+  ActivitySuggestion(
+    id: 'c3',
+    title: 'Flutter Widget of the Week',
+    description: 'Binge watch 3 short official Flutter videos.',
+    category: 'Coding',
+    minDuration: 10,
+    type: 'Productive',
+    resourceUrl: 'https://www.youtube.com/playlist?list=PLjxrf2q8roU23XGwz3Km7sQZFTdB996iG',
+    resourceType: 'Video',
+  ),
+  ActivitySuggestion(
+    id: 'c4',
+    title: 'Refactor One Module',
+    description: 'Pick one messy file in your project and clean it up.',
+    category: 'Coding',
+    minDuration: 45,
+    type: 'Productive',
+    resourceUrl: 'https://github.com/', // Deep link to their repo ideally
+    resourceType: 'Practice',
+  ),
+
+  // ================== 2. DESIGN ==================
+  ActivitySuggestion(
+    id: 'd1',
+    title: 'Figma Auto-Layout',
+    description: 'Master responsive resizing in 20 mins.',
+    category: 'Design',
+    minDuration: 30,
+    type: 'Productive',
+    resourceUrl: 'https://www.youtube.com/watch?v=T2C582hD380',
+    resourceType: 'Video',
+  ),
+  ActivitySuggestion(
+    id: 'd2',
+    title: 'Dribbble Inspiration Hunt',
+    description: 'Find 5 references for your next project UI.',
+    category: 'Design',
+    minDuration: 15,
+    type: 'Productive',
+    resourceUrl: 'https://dribbble.com/shots/popular',
+    resourceType: 'Article',
+  ),
+  ActivitySuggestion(
+    id: 'd3',
+    title: 'Color Theory Basics',
+    description: 'Learn the 60-30-10 rule for perfect palettes.',
+    category: 'Design',
+    minDuration: 10,
+    type: 'Productive',
+    resourceUrl: 'https://www.youtube.com/watch?v=AvgCkHrcj90',
+    resourceType: 'Video',
+  ),
+
+  // ================== 3. PUBLIC SPEAKING ==================
+  ActivitySuggestion(
+    id: 'ps1',
+    title: 'Vocal Warmups',
+    description: 'Clear your throat and improve resonance.',
+    category: 'Public Speaking',
+    minDuration: 10,
+    type: 'Rest',
+    resourceUrl: 'https://www.youtube.com/watch?v=0xYC56o0n4U',
+    resourceType: 'Video',
+  ),
+  ActivitySuggestion(
+    id: 'ps2',
+    title: 'Analyze Body Language',
+    description: 'Watch this TED talk specifically for hand gestures.',
+    category: 'Public Speaking',
+    minDuration: 20,
+    type: 'Productive',
+    resourceUrl: 'https://www.ted.com/talks/amy_cuddy_your_body_language_may_shape_who_you_are',
+    resourceType: 'Video',
+  ),
+  ActivitySuggestion(
+    id: 'ps3',
+    title: 'Improv Exercise',
+    description: 'Speak for 2 minutes on a random object nearby.',
+    category: 'Public Speaking',
+    minDuration: 5,
+    type: 'Productive',
+    resourceUrl: 'https://www.youtube.com/results?search_query=improv+exercises+solo',
+    resourceType: 'Practice',
+  ),
+
+  // ================== 4. WRITING ==================
+  ActivitySuggestion(
+    id: 'wr1',
+    title: 'The Morning Pages',
+    description: 'Write 3 pages of stream-of-consciousness thought.',
+    category: 'Writing',
+    minDuration: 30,
+    type: 'Rest',
+    resourceUrl: 'https://juliacameronlive.com/the-artists-way/morning-pages/',
+    resourceType: 'Article',
+  ),
+  ActivitySuggestion(
+    id: 'wr2',
+    title: 'Edit Old Work',
+    description: 'Cut 10% of the words from your last draft.',
+    category: 'Writing',
+    minDuration: 20,
+    type: 'Productive',
+    resourceUrl: 'https://hemingwayapp.com/',
+    resourceType: 'Practice',
+  ),
+  ActivitySuggestion(
+    id: 'wr3',
+    title: 'Blog Post Outline',
+    description: 'Draft the headers for your next article.',
+    category: 'Writing',
+    minDuration: 15,
+    type: 'Productive',
+    resourceUrl: 'https://medium.com/new-story',
+    resourceType: 'Practice',
+  ),
+
+  // ================== 5. MARKETING ==================
+  ActivitySuggestion(
+    id: 'm1',
+    title: 'SEO Keyword Research',
+    description: 'Find 5 low-competition keywords for your niche.',
+    category: 'Marketing',
+    minDuration: 30,
+    type: 'Productive',
+    resourceUrl: 'https://trends.google.com/',
+    resourceType: 'Practice',
+  ),
+  ActivitySuggestion(
+    id: 'm2',
+    title: 'Copywriting Hooks',
+    description: 'Write 10 variations of a Twitter/LinkedIn hook.',
+    category: 'Marketing',
+    minDuration: 15,
+    type: 'Productive',
+    resourceUrl: 'https://www.copy.ai/blog/social-media-hooks',
+    resourceType: 'Article',
+  ),
+  ActivitySuggestion(
+    id: 'm3',
+    title: 'Competitor Analysis',
+    description: 'Review ads from 3 competitors in your space.',
+    category: 'Marketing',
+    minDuration: 20,
+    type: 'Productive',
+    resourceUrl: 'https://www.facebook.com/ads/library/',
+    resourceType: 'Practice',
+  ),
+
+  // ================== 6. FINANCE ==================
+  ActivitySuggestion(
+    id: 'f1',
+    title: 'Expense Audit',
+    description: 'Categorize your last 10 transactions.',
+    category: 'Finance',
+    minDuration: 15,
+    type: 'Productive',
+    resourceUrl: 'https://mint.intuit.com/', // Or just generic
+    resourceType: 'Practice',
+  ),
+  ActivitySuggestion(
+    id: 'f2',
+    title: 'Investing 101',
+    description: 'Understand ETFs vs Mutual Funds.',
+    category: 'Finance',
+    minDuration: 20,
+    type: 'Productive',
+    resourceUrl: 'https://www.investopedia.com/articles/exchangetradedfunds/08/etf-mutual-fund-difference.asp',
+    resourceType: 'Article',
+  ),
+
+  // ================== 7. PHOTOGRAPHY ==================
+  ActivitySuggestion(
+    id: 'ph1',
+    title: 'Rule of Thirds Drill',
+    description: 'Take 10 photos of your room using the grid.',
+    category: 'Photography',
+    minDuration: 10,
+    type: 'Productive',
+    resourceUrl: 'https://www.adobe.com/creativecloud/photography/discover/rule-of-thirds.html',
+    resourceType: 'Practice',
+  ),
+  ActivitySuggestion(
+    id: 'ph2',
+    title: 'Lightroom Edit',
+    description: 'Edit one photo using only the Tone Curve.',
+    category: 'Photography',
+    minDuration: 20,
+    type: 'Productive',
+    resourceUrl: 'https://lightroom.adobe.com/',
+    resourceType: 'Practice',
+  ),
+
+  // ================== 8. WELLNESS ==================
+  ActivitySuggestion(
+    id: 'w1',
+    title: 'NSDR Protocol',
+    description: 'Huberman Lab guided deep rest (20 mins).',
+    category: 'Wellness',
+    minDuration: 20,
+    type: 'Rest',
+    resourceUrl: 'https://www.youtube.com/watch?v=AKGrmY8OSHM',
+    resourceType: 'Audio',
+  ),
+  ActivitySuggestion(
+    id: 'w2',
+    title: 'Desk Stretches',
+    description: 'Relieve neck and back tension right now.',
+    category: 'Wellness',
+    minDuration: 5,
+    type: 'Rest',
+    resourceUrl: 'https://www.youtube.com/watch?v=N_s9V1N89NW',
+    resourceType: 'Video',
+  ),
+  ActivitySuggestion(
+    id: 'w3',
+    title: 'Wim Hof Breathing',
+    description: 'Reset your nervous system with breathwork.',
+    category: 'Wellness',
+    minDuration: 15,
+    type: 'Rest',
+    resourceUrl: 'https://www.youtube.com/watch?v=tybOi4hjZFQ',
+    resourceType: 'Video',
+  ),
+
+  // ================== 9. AI TOOLS ==================
+  ActivitySuggestion(
+    id: 'ai1',
+    title: 'Prompt Engineering',
+    description: 'Learn the "Chain of Thought" technique.',
+    category: 'AI Tools',
+    minDuration: 15,
+    type: 'Productive',
+    resourceUrl: 'https://www.promptingguide.ai/techniques/cot',
+    resourceType: 'Article',
+  ),
+  ActivitySuggestion(
+    id: 'ai2',
+    title: 'Test New Model',
+    description: 'Try the same prompt on ChatGPT vs Claude.',
+    category: 'AI Tools',
+    minDuration: 10,
+    type: 'Productive',
+    resourceUrl: 'https://chat.openai.com/',
+    resourceType: 'Practice',
+  ),
+];

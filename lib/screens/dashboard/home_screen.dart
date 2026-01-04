@@ -3,6 +3,9 @@ import 'package:table_calendar/table_calendar.dart';
 import '../../core/theme.dart';
 import '../../services/calendar_service.dart';
 import '../../core/theme_controller.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../models/activity_suggestion.dart'; // <--- Import your new "Brain"
+import 'package:url_launcher/url_launcher.dart'; // <--- Add this
 
 enum TaskStatus { scheduled, free, cancelled }
 
@@ -14,6 +17,9 @@ class ScheduleTask {
   String location;
   TaskStatus status;
   String? description;
+  // --- NEW FIELDS ---
+  String? resourceUrl;
+  String? resourceType; // "Video", "Article", etc.
 
   ScheduleTask({
     required this.id,
@@ -23,6 +29,8 @@ class ScheduleTask {
     this.location = "",
     this.status = TaskStatus.scheduled,
     this.description,
+    this.resourceUrl,
+    this.resourceType,
   });
 }
 
@@ -55,31 +63,108 @@ class _HomeScreenState extends State<HomeScreen> {
     _selectedDay = _focusedDay;
   }
 
+// --- HELPER: Open the link ---
+  Future<void> _launchURL(String urlString) async {
+    try {
+      final Uri url = Uri.parse(urlString);
+      if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+        throw Exception('Could not launch $url');
+      }
+    } catch (e) {
+      debugPrint("Error launching URL: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Could not open link")),
+      );
+    }
+  }
+
+  // --- HELPER: Pick icon based on resource type ---
+  IconData _getIconForType(String type) {
+    switch (type) {
+      case 'Video': return Icons.play_circle_outline;
+      case 'Practice': return Icons.code;
+      case 'Article': return Icons.article_outlined;
+      case 'Audio': return Icons.headphones;
+      case 'Project': return Icons.build;
+      default: return Icons.lightbulb_outline;
+    }
+  }
+
+
+// --- LOGIC: Merge Consecutive Free Slots ---
+  void _mergeFreeSlots() {
+    // We iterate backwards so removing items doesn't mess up the loop index
+    for (int i = _schedule.length - 2; i >= 0; i--) {
+      final current = _schedule[i];
+      final next = _schedule[i + 1];
+
+      // If BOTH are free, merge them!
+      if (current.status == TaskStatus.free && next.status == TaskStatus.free) {
+        setState(() {
+          // 1. Extend the current slot's end time
+          current.endTime = next.endTime;
+          
+          // 2. Update the title to show it's a big block
+          current.title = "Extended Free Slot";
+          
+          // 3. Remove the next slot (since it's now absorbed)
+          _schedule.removeAt(i + 1);
+        });
+      }
+    }
+  }
+
+// --- HELPER: Calculate minutes between "10:30" and "11:45" ---
+  int _calculateDuration(String startStr, String endStr) {
+    try {
+      final startParts = startStr.split(':').map(int.parse).toList();
+      final endParts = endStr.split(':').map(int.parse).toList();
+
+      final startMinutes = startParts[0] * 60 + startParts[1];
+      final endMinutes = endParts[0] * 60 + endParts[1];
+
+      return endMinutes - startMinutes;
+    } catch (e) {
+      return 30; // Default to 30 mins if parsing fails
+    }
+  }
+
   // --- LOGIC: Cancel Class ---
   void _cancelTask(int index) {
     setState(() {
       _schedule[index].status = TaskStatus.free;
       _schedule[index].title = "Free Slot";
       _schedule[index].location = "Available";
+      _schedule[index].description = null; // Clear old descriptions
     });
+
+    // --- NEW: Run the merge logic immediately ---
+    _mergeFreeSlots(); 
+
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Class cancelled. Time slot freed up!")),
+      const SnackBar(content: Text("Class cancelled. Checking for merged slots...")),
     );
   }
 
   // --- LOGIC: AI Suggestions ---
   void _openAISuggestions(int index) {
+    final task = _schedule[index];
+    final duration = _calculateDuration(task.time, task.endTime);
+
     showModalBottomSheet(
       context: context,
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      // ... styling ...
       builder: (context) => _AISuggestionSheet(
-        timeSlot: "${_schedule[index].time} - ${_schedule[index].endTime}",
-        onSelect: (newTitle, newDesc) {
+        timeSlot: "${task.time} - ${task.endTime}",
+        durationMinutes: duration,
+        // RECEIVE THE NEW DATA HERE
+        onSelect: (newTitle, newDesc, newUrl, newType) {
           setState(() {
             _schedule[index].title = newTitle;
             _schedule[index].description = newDesc;
-            _schedule[index].location = "Self Study / Library";
+            _schedule[index].resourceUrl = newUrl; // Save Link
+            _schedule[index].resourceType = newType; // Save Type
+            _schedule[index].location = "Self Study";
             _schedule[index].status = TaskStatus.scheduled; 
           });
           Navigator.pop(context);
@@ -95,11 +180,12 @@ class _HomeScreenState extends State<HomeScreen> {
     final events = await _calendarService.fetchCalendarEvents(
       _selectedDay ?? DateTime.now(),
     );
-
+  
     if (events != null && mounted) {
       setState(() {
         _schedule.clear();
         _schedule.addAll(events);
+        _mergeFreeSlots();
       });
     }
   } catch (e) {
@@ -216,6 +302,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       child: Row(
         children: [
+          // Time Column
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -226,21 +313,69 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(width: 20),
           Container(height: 40, width: 2, color: AppTheme.goldAccent.withOpacity(0.2)),
           const SizedBox(width: 20),
+          
+          // Details Column
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(task.title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textColor)),
                 Text(task.location, style: TextStyle(fontSize: 14, color: textColor.withOpacity(0.6))),
-                if (task.description != null) // Show description if added by AI
+                
+                // Description
+                if (task.description != null) 
                   Padding(
                     padding: const EdgeInsets.only(top: 4.0),
-                    child: Text(task.description!, style: TextStyle(fontSize: 12, color: AppTheme.goldAccent, fontStyle: FontStyle.italic)),
-                  )
+                    child: Text(
+                      task.description!, 
+                      maxLines: 2, 
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 12, color: Colors.grey, fontStyle: FontStyle.italic)
+                    ),
+                  ),
+
+                // --- NEW CODE STARTS HERE ---
+                // If this task has a link attached, show the "Open" button
+                if (task.resourceUrl != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: InkWell(
+                      onTap: () => _launchURL(task.resourceUrl!), // Opens the link
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: AppTheme.goldAccent.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: AppTheme.goldAccent.withOpacity(0.3)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min, // shrink to fit text
+                          children: [
+                            Icon(
+                              _getIconForType(task.resourceType ?? 'Link'), // Uses helper for correct icon
+                              size: 14, 
+                              color: AppTheme.goldAccent
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              "Open ${task.resourceType ?? 'Resource'}",
+                              style: const TextStyle(
+                                color: AppTheme.goldAccent, 
+                                fontWeight: FontWeight.bold, 
+                                fontSize: 12
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                // --- NEW CODE ENDS HERE ---
               ],
             ),
           ),
-          // --- THE 3 DOTS MENU ---
+          
+          // 3 Dots Menu
           PopupMenuButton<String>(
             icon: Icon(Icons.more_vert, color: textColor.withOpacity(0.5)),
             onSelected: (value) {
@@ -324,9 +459,14 @@ class _HomeScreenState extends State<HomeScreen> {
 // --- 3. AI SUGGESTION SHEET ---
 class _AISuggestionSheet extends StatefulWidget {
   final String timeSlot;
-  final Function(String title, String desc) onSelect;
+  final int durationMinutes; // We need this to filter tasks
+  final Function(String title, String desc, String url, String type) onSelect;
 
-  const _AISuggestionSheet({required this.timeSlot, required this.onSelect});
+  const _AISuggestionSheet({
+    required this.timeSlot, 
+    required this.durationMinutes, 
+    required this.onSelect
+  });
 
   @override
   State<_AISuggestionSheet> createState() => _AISuggestionSheetState();
@@ -334,27 +474,211 @@ class _AISuggestionSheet extends StatefulWidget {
 
 class _AISuggestionSheetState extends State<_AISuggestionSheet> {
   bool _isLoading = true;
-  List<Map<String, String>> _suggestions = [];
+  List<ActivitySuggestion> _suggestions = [];
 
   @override
   void initState() {
     super.initState();
-    _fetchSuggestions();
+    _generateSmartSuggestions();
   }
 
-  Future<void> _fetchSuggestions() async {
-    await Future.delayed(const Duration(seconds: 2)); // Mock AI Delay
-    if (mounted) {
-      setState(() {
-        _isLoading = false;
-        _suggestions = [
-          {"title": "Deep Work Block", "desc": "Focus on your hardest project for 45 mins."},
-          {"title": "Quick Revision", "desc": "Review notes from Computer Architecture."},
-          {"title": "Mental Reset", "desc": "Take a walk or meditate to recharge."},
-        ];
-      });
+
+// --- HELPER: Pick icon based on resource type ---
+  IconData _getIconForType(String type) {
+    switch (type) {
+      case 'Video': return Icons.play_circle_outline;
+      case 'Practice': return Icons.code;
+      case 'Article': return Icons.article_outlined;
+      case 'Audio': return Icons.headphones;
+      case 'Project': return Icons.build;
+      default: return Icons.lightbulb_outline;
     }
   }
+
+  // --- HELPER: Build the colored tags ---
+  Widget _buildTag(String text, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: color.withOpacity(0.5), width: 0.5),
+      ),
+      child: Text(
+        text, 
+        style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.bold)
+      ),
+    );
+  }
+
+  // --- HELPER: Open the link ---
+  Future<void> _launchURL(String urlString) async {
+    try {
+      final Uri url = Uri.parse(urlString);
+      if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+        throw Exception('Could not launch $url');
+      }
+    } catch (e) {
+      debugPrint("Error launching URL: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Could not open link")),
+      );
+    }
+  }
+//Confirmation dialog box
+void _showConfirmationDialog(ActivitySuggestion item) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        
+        return AlertDialog(
+          backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Row(
+            children: [
+              Icon(_getIconForType(item.resourceType), color: AppTheme.goldAccent),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  item.title,
+                  style: TextStyle(
+                    fontSize: 18, 
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : Colors.black
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 1. VISUAL TAGS
+              Row(
+                children: [
+                  _buildTag("${item.minDuration} min", Colors.blue),
+                  const SizedBox(width: 8),
+                  _buildTag(item.resourceType, Colors.orange),
+                ],
+              ),
+              const SizedBox(height: 16),
+              
+              // 2. FULL DESCRIPTION (No truncation)
+              Text(
+                item.description,
+                style: TextStyle(fontSize: 14, height: 1.5, color: isDark ? Colors.white70 : Colors.black87),
+              ),
+              
+              const SizedBox(height: 20),
+              
+              // 3. RESOURCE LINK (Optional Preview)
+              InkWell(
+                onTap: () => _launchURL(item.resourceUrl),
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppTheme.goldAccent.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppTheme.goldAccent.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.open_in_new, size: 16, color: AppTheme.goldAccent),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          "Open ${item.resourceType}", 
+                          style: const TextStyle(color: AppTheme.goldAccent, fontWeight: FontWeight.bold)
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            ],
+          ),
+          actions: [
+            // CANCEL BUTTON
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text("Cancel", style: TextStyle(color: isDark ? Colors.grey : Colors.grey[700])),
+            ),
+            // CONFIRM BUTTON
+            ElevatedButton(
+              onPressed: () {
+                  Navigator.pop(context);
+                  // PASS ALL 4 VALUES NOW
+                  widget.onSelect(
+                    item.title, 
+                    item.description, 
+                    item.resourceUrl, 
+                    item.resourceType
+                  ); 
+                },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.goldAccent,
+                foregroundColor: AppTheme.darkBlue,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              child: const Text("Add to Schedule", style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _generateSmartSuggestions() async {
+  try {
+    final user = Supabase.instance.client.auth.currentUser;
+    List<String> userInterests = [];
+
+    if (user != null) {
+      final data = await Supabase.instance.client
+          .from('profiles')
+          .select('interests')
+          .eq('id', user.id)
+          .maybeSingle();
+
+      if (data != null && data['interests'] != null) {
+        // Convert the dynamic list to a clean String list
+        userInterests = List<String>.from(data['interests']);
+      }
+    }
+
+    // --- DEBUG: Print what matches found ---
+    print("🔎 User Interests Found: $userInterests");
+
+    // THE FIX: Strict Filtering
+    final validTasks = taskLibrary.where((task) {
+      // Rule 1: Must fit in time
+      final fitsTime = task.minDuration <= widget.durationMinutes;
+      
+      // Rule 2: STRICT MATCH ONLY (Removed the '|| Wellness' part)
+      // The task category must be inside your selected list.
+      final isInteresting = userInterests.contains(task.category);
+
+      return fitsTime && isInteresting;
+    }).toList();
+
+    // Shuffle and pick top 3
+    validTasks.shuffle();
+    
+    if (mounted) {
+      setState(() {
+        _suggestions = validTasks.take(3).toList();
+        _isLoading = false;
+      });
+    }
+
+  } catch (e) {
+    debugPrint("❌ Error generating suggestions: $e");
+    if (mounted) setState(() => _isLoading = false);
+  }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -362,7 +686,7 @@ class _AISuggestionSheetState extends State<_AISuggestionSheet> {
     
     return Container(
       padding: const EdgeInsets.all(24),
-      height: 400,
+      height: 450,
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
@@ -371,9 +695,20 @@ class _AISuggestionSheetState extends State<_AISuggestionSheet> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text("Suggestions for ${widget.timeSlot}", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black)),
-              const Spacer(),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text("Suggestions for ${widget.timeSlot}", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black)),
+                    Text(
+                      "${widget.durationMinutes} min available", 
+                      style: const TextStyle(fontSize: 12, color: AppTheme.goldAccent, fontWeight: FontWeight.bold)
+                    ),
+                  ],
+                ),
+              ),
               IconButton(
                 onPressed: () => Navigator.pop(context), 
                 icon: Icon(Icons.close, color: isDark ? Colors.white : Colors.grey)
@@ -381,36 +716,86 @@ class _AISuggestionSheetState extends State<_AISuggestionSheet> {
             ],
           ),
           const SizedBox(height: 20),
+          
           if (_isLoading)
-            const Center(child: CircularProgressIndicator(color: AppTheme.goldAccent))
-          else
+            const Expanded(child: Center(child: CircularProgressIndicator(color: AppTheme.goldAccent)))
+          else if (_suggestions.isEmpty)
             Expanded(
-              child: ListView.builder(
-                itemCount: _suggestions.length,
-                itemBuilder: (context, index) {
-                  final item = _suggestions[index];
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    elevation: 0,
-                    color: isDark ? Colors.grey[800] : Colors.grey.shade50,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      side: BorderSide(color: isDark ? Colors.transparent : Colors.grey.shade200),
-                    ),
-                    child: ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor: AppTheme.goldAccent.withOpacity(0.1),
-                        child: const Icon(Icons.lightbulb_outline, color: AppTheme.goldAccent, size: 20),
-                      ),
-                      title: Text(item['title']!, style: TextStyle(fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black)),
-                      subtitle: Text(item['desc']!, style: TextStyle(fontSize: 12, color: isDark ? Colors.white70 : Colors.black54)),
-                      trailing: Icon(Icons.add_circle_outline, color: isDark ? Colors.white : Colors.black),
-                      onTap: () => widget.onSelect(item['title']!, item['desc']!),
-                    ),
-                  );
-                },
+              child: Center(
+                child: Text(
+                  "No specific tasks fit this short time slot.\nTry a quick breather!",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: isDark ? Colors.white70 : Colors.grey),
+                ),
               ),
             )
+          else
+            Expanded(
+  child: ListView.builder(
+    itemCount: _suggestions.length,
+    itemBuilder: (context, index) {
+      final item = _suggestions[index];
+      
+      return Card(
+        margin: const EdgeInsets.only(bottom: 12),
+        elevation: 0,
+        color: isDark ? Colors.grey[800] : Colors.grey.shade50,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(color: isDark ? Colors.transparent : Colors.grey.shade200),
+        ),
+        child: ListTile(
+          // 1. DYNAMIC ICON (Based on Video, Practice, etc.)
+          leading: CircleAvatar(
+            backgroundColor: AppTheme.goldAccent.withOpacity(0.1),
+            child: Icon(
+              _getIconForType(item.resourceType), 
+              color: AppTheme.goldAccent, 
+              size: 20
+            ),
+          ),
+          
+          // 2. TITLE
+          title: Text(
+            item.title, 
+            style: TextStyle(fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black)
+          ),
+          
+          // 3. SUBTITLE with Description + Visual Tags
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                  item.description, 
+                  maxLines: 2, // <--- Change from 1 to 2
+                  overflow: TextOverflow.ellipsis, 
+                  style: TextStyle(fontSize: 12, color: isDark ? Colors.white70 : Colors.black54)
+                  ),
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  _buildTag("${item.minDuration} min", Colors.blue),
+                  const SizedBox(width: 6),
+                  _buildTag(item.resourceType, Colors.orange),
+                ],
+              )
+            ],
+          ),
+          
+          // 4. LAUNCH BUTTON (Opens URL)
+          trailing: IconButton(
+            icon: const Icon(Icons.open_in_new, color: AppTheme.goldAccent),
+            tooltip: "Open Resource",
+            onPressed: () => _launchURL(item.resourceUrl),
+          ),
+          
+          // 5. PLAN BUTTON (Adds to Schedule)
+          onTap: () => _showConfirmationDialog(item),
+        ),
+      );
+    },
+  ),
+)
         ],
       ),
     );
