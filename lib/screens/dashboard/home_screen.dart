@@ -4,7 +4,6 @@ import '../../core/theme.dart';
 import '../../services/calendar_service.dart';
 import '../../core/theme_controller.dart';
 
-// --- 1. DATA MODEL (State Management) ---
 enum TaskStatus { scheduled, free, cancelled }
 
 class ScheduleTask {
@@ -90,12 +89,28 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _syncCalendar() async {
-    setState(() => _isSyncing = true);
-    // Simulate network delay
-    await Future.delayed(const Duration(seconds: 1));
-    setState(() => _isSyncing = false);
-    // In real app: Map fetched events to ScheduleTask objects here
+  setState(() => _isSyncing = true);
+
+  try {
+    final events = await _calendarService.fetchCalendarEvents(
+      _selectedDay ?? DateTime.now(),
+    );
+
+    if (events != null && mounted) {
+      setState(() {
+        _schedule.clear();
+        _schedule.addAll(events);
+      });
+    }
+  } catch (e) {
+    debugPrint("SYNC FAILED: $e");
+  } finally {
+    if (mounted) {
+      setState(() => _isSyncing = false);
+    }
   }
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -122,7 +137,10 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           IconButton(
             icon: Icon(_isSyncing ? Icons.hourglass_top : Icons.sync, color: textColor),
-            onPressed: _syncCalendar,
+            onPressed: () {
+              print("BUTTON CLICKED! Starting Sync..."); // <--- ADD THIS LINE
+              _syncCalendar();
+            },
           ),
         ],
       ),

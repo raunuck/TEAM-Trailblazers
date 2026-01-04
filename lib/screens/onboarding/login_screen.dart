@@ -72,9 +72,9 @@ class _LoginScreenState extends State<LoginScreen> {
           });
           
           if (mounted) {
-             _showSnackBar("Account created successfully!", Colors.green);
+            _showSnackBar("Account created successfully!", Colors.green);
              // New users ALWAYS go to Interest Screen
-             Navigator.pushReplacement(
+            Navigator.pushReplacement(
               context,
               MaterialPageRoute(builder: (context) => InterestScreen(isStudent: isStudent)),
             );
@@ -159,7 +159,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   _isLogin ? "Welcome Back," : "Create Account,",
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: AppTheme.darkBlue,
+                        color: const Color(0xFFCCA35E),
                       ),
                 ),
                 const SizedBox(height: 8),
@@ -218,8 +218,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : _submit,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primaryBlue,
-                      foregroundColor: Colors.white,
+                      backgroundColor: const Color(0xFFCCA35E),
+                      foregroundColor: AppTheme.primaryBlue,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                     child: _isLoading 
@@ -249,7 +249,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           TextSpan(
                             text: _isLogin ? "Create Account" : "Sign In",
                             style: TextStyle(
-                              color: AppTheme.primaryBlue,
+                              color: const Color.fromARGB(255, 255, 255, 255),
                               fontWeight: FontWeight.bold,
                             ),
                           ),
