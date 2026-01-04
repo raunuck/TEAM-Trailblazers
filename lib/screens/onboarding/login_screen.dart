@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:adaptive_student_time/core/theme.dart';
+import '../../core/theme.dart';
+import '../../screens/main_layout.dart';
 import '../onboarding/interest_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -23,6 +24,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
 
   // --- AUTH LOGIC ---
+
   Future<void> _submit() async {
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
@@ -37,10 +39,15 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       if (_isLogin) {
         // --- 1. LOGIN MODE ---
-        await Supabase.instance.client.auth.signInWithPassword(
+        final AuthResponse res = await Supabase.instance.client.auth.signInWithPassword(
           email: email,
           password: password,
         );
+
+        // Check if user exists, then check interests
+        if (res.user != null && mounted) {
+          await _checkInterestsAndNavigate(res.user!.id);
+        }
       } else {
         // --- 2. SIGN UP MODE ---
         final AuthResponse response = await Supabase.instance.client.auth.signUp(
@@ -48,16 +55,15 @@ class _LoginScreenState extends State<LoginScreen> {
           password: password,
         );
 
-        // DATABASE FIX: Save the user's role immediately
         if (response.user != null) {
-          // Check if session is null (Means Email Verification is ON in Supabase)
+          // Check if email confirmation is required/missing
           if (response.session == null) {
             _showSnackBar("Please check your email to confirm your account.", Colors.blue);
             setState(() => _isLoading = false);
             return;
           }
 
-          // Save to 'profiles' table using UPSERT (Safe Insert)
+          // Create the profile row (Safe Insert)
           await Supabase.instance.client.from('profiles').upsert({
             'id': response.user!.id,
             'email': email,
@@ -65,26 +71,67 @@ class _LoginScreenState extends State<LoginScreen> {
             'created_at': DateTime.now().toIso8601String(),
           });
           
-          if (mounted) _showSnackBar("Account created successfully!", Colors.green);
+          if (mounted) {
+             _showSnackBar("Account created successfully!", Colors.green);
+             // New users ALWAYS go to Interest Screen
+             Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => InterestScreen(isStudent: isStudent)),
+            );
+          }
+        }
+      }
+    } on AuthException catch (e) {
+      _showSnackBar(e.message, Colors.redAccent);
+      setState(() => _isLoading = false);
+    } catch (e) {
+      _showSnackBar("Error: $e", Colors.redAccent);
+      setState(() => _isLoading = false);
+    }
+  }
+
+  // --- HELPER FUNCTIONS (Placed here, inside the class) ---
+
+  Future<void> _checkInterestsAndNavigate(String userId) async {
+    try {
+      final data = await Supabase.instance.client
+          .from('profiles')
+          .select('interests')
+          .eq('id', userId)
+          .maybeSingle();
+
+      bool hasInterests = false;
+      if (data != null && data['interests'] != null) {
+        final List interests = data['interests'];
+        if (interests.isNotEmpty) {
+          hasInterests = true;
         }
       }
 
-      // Success! Navigate to next screen
+      if (!mounted) return;
+
+      if (hasInterests) {
+        // Existing user -> Dashboard
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const MainLayout()),
+        );
+      } else {
+        // Incomplete profile -> Interest Screen
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => InterestScreen(isStudent: isStudent)),
+        );
+      }
+    } catch (e) {
+      debugPrint("Error checking profile: $e");
+      // Fallback: If check fails, just go to Interest Screen to be safe
       if (mounted) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(
-            builder: (context) => InterestScreen(isStudent: isStudent),
-          ),
+          MaterialPageRoute(builder: (context) => InterestScreen(isStudent: isStudent)),
         );
       }
-
-    } on AuthException catch (e) {
-      _showSnackBar(e.message, Colors.redAccent);
-    } catch (e) {
-      _showSnackBar("Error: $e", Colors.redAccent);
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -95,6 +142,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   // --- UI CODE ---
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -107,7 +155,6 @@ class _LoginScreenState extends State<LoginScreen> {
               children: [
                 const SizedBox(height: 50),
                 
-                // 1. Dynamic Header
                 Text(
                   _isLogin ? "Welcome Back," : "Create Account,",
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
@@ -126,7 +173,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 40),
 
-                // 2. Role Toggle (Visible in both modes for clarity)
+                // Role Toggle
                 Container(
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
@@ -142,7 +189,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 30),
 
-                // 3. Inputs
+                // Inputs
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
@@ -164,7 +211,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 40),
 
-                // 4. Main Action Button
+                // Action Button
                 SizedBox(
                   width: double.infinity,
                   height: 50,
@@ -186,12 +233,12 @@ class _LoginScreenState extends State<LoginScreen> {
                 
                 const SizedBox(height: 20),
 
-                // 5. Toggle Mode Link
+                // Mode Switch Link
                 Center(
                   child: GestureDetector(
                     onTap: () {
                       setState(() {
-                        _isLogin = !_isLogin; // Switch modes
+                        _isLogin = !_isLogin;
                       });
                     },
                     child: RichText(

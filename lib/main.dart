@@ -5,15 +5,14 @@ import 'core/theme_controller.dart'; // <--- Import the new controller
 import 'screens/login_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'screens/vault/vault_screen.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'screens/onboarding/welcome_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Supabase.initialize(
-    url: 'YOUR_SUPABASE_PROJECT_URL',
-    anonKey: 'YOUR_SUPABASE_ANON_KEY',
+    url: 'https://dgramltguzqwpxwwpdyw.supabase.co',
+    anonKey: 'sb_publishable_NEgKaz6XBa3evK7AQjAUEQ_apXKv_k_',
   );
 
   // --- NEW: Sign in anonymously if not already logged in ---

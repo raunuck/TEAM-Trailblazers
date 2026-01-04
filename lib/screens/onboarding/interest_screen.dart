@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/theme.dart';
 import '../../screens/main_layout.dart'; 
 
@@ -19,11 +20,57 @@ class _InterestScreenState extends State<InterestScreen> {
   ];
 
   final Set<String> _selected = {};
+  bool _isSaving = false; // To show loading spinner
+
+  Future<void> _saveAndContinue() async {
+    if (_selected.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please select at least one interest")),
+      );
+      return;
+    }
+
+    setState(() => _isSaving = true);
+
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user != null) {
+        // --- SAVE TO DATABASE ---
+        // This updates the user's profile with their selected interests
+        // Note: You need to run the SQL command below for this to work!
+        await Supabase.instance.client.from('profiles').update({
+          'interests': _selected.toList(),
+        }).eq('id', user.id);
+      }
+
+      if (mounted) {
+        Navigator.pushAndRemoveUntil(
+          context, 
+          MaterialPageRoute(builder: (context) => const MainLayout()), 
+          (route) => false
+        );
+      }
+    } catch (e) {
+      // Even if saving fails, we let them in (Offline Mode fallback)
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Note: Could not save interests online ($e)")),
+        );
+        Navigator.pushAndRemoveUntil(
+          context, 
+          MaterialPageRoute(builder: (context) => const MainLayout()), 
+          (route) => false
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white, // Explicit background color is safer
+      backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -41,7 +88,7 @@ class _InterestScreenState extends State<InterestScreen> {
                   : "What subjects do you teach?",
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: AppTheme.darkBlue, // Ensure this matches your theme variable name
+                    color: AppTheme.darkBlue, 
                   ),
             ),
             const SizedBox(height: 12),
@@ -89,8 +136,6 @@ class _InterestScreenState extends State<InterestScreen> {
                         boxShadow: isSelected
                             ? [
                                 BoxShadow(
-                                  // Note: 'withValues' is for Flutter 3.27+. 
-                                  // If you get an error, use .withOpacity(0.3)
                                   color: AppTheme.primaryBlue.withOpacity(0.3), 
                                   blurRadius: 8,
                                   offset: const Offset(0, 4),
@@ -114,36 +159,24 @@ class _InterestScreenState extends State<InterestScreen> {
             
             const SizedBox(height: 16),
 
-            // FIXED: Complete "Continue" Button
+            // "Continue" Button
             SizedBox(
               width: double.infinity,
+              height: 56, // Fixed height for consistency
               child: ElevatedButton(
-                onPressed: () {
-                  // Optional: Add validation here (e.g., must select at least 1)
-                  if (_selected.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Please select at least one interest")),
-                    );
-                    return;
-                  }
-
-                  Navigator.pushAndRemoveUntil(
-                    context, 
-                    MaterialPageRoute(builder: (context) => const MainLayout()), 
-                    (route) => false
-                  );
-                },
+                onPressed: _isSaving ? null : _saveAndContinue,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.primaryBlue,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Text(
-                  "Continue",
-                  style: TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold),
-                ),
+                child: _isSaving 
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text(
+                        "Continue",
+                        style: TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold),
+                      ),
               ),
             ),
           ],

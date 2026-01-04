@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
-import 'auth_screen.dart'; // Navigation to next step
+import 'login_screen.dart'; // Navigation to next step
+
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
@@ -41,7 +42,7 @@ class WelcomeScreen extends StatelessWidget {
                 child: ElevatedButton.icon(
                   onPressed: () {
                     // Navigate to the NEW Auth Screen (User/Pass)
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => const AuthScreen()));
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => const LoginScreen()));
                   },
                   icon: const Icon(Icons.arrow_forward, color: AppTheme.darkBlue),
                   label: const Text("Get Started", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.darkBlue)),
