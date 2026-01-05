@@ -23,10 +23,14 @@ class _VaultScreenState extends State<VaultScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Knowledge Vault", style: TextStyle(color: Colors.white)),
+        title:  Text("Vault", style: TextStyle(
+          color: isDark ? Color.fromARGB(255, 255, 255, 255) : const Color(0xFF0A0C1D),
+          fontWeight: FontWeight.bold, 
+          letterSpacing: 1.2
+          )),
         centerTitle: true,
         automaticallyImplyLeading: false,
-        backgroundColor: isDark ? const Color(0xFF0A0C1D) : AppTheme.darkBlue,
+        backgroundColor: isDark ? const Color(0xFF0A0C1D) : Color.fromARGB(255, 255, 255, 255),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => Navigator.push(
@@ -64,7 +68,7 @@ class _VaultScreenState extends State<VaultScreen> {
                   const Icon(Icons.lightbulb_outline, color: AppTheme.goldAccent),
                   const SizedBox(width: 10),
                   Text(
-                    "My Startup & Blog Ideas",
+                    "My Ideas & Goals",
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,

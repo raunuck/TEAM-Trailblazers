@@ -69,7 +69,7 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
     return Scaffold(
       backgroundColor: bgColor,
       appBar: AppBar(
-        backgroundColor: isDark ? const Color(0xFF0A0C1D) : AppTheme.darkBlue,
+        backgroundColor: isDark ? const Color(0xFF0A0C1D) : Colors.white,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.close, color: Colors.white),
@@ -78,7 +78,10 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
         centerTitle: true,
         title: const Text(
           "NEW VAULT ENTRY", 
-          style: TextStyle(fontSize: 14, letterSpacing: 1.5, fontWeight: FontWeight.bold, color: Colors.white)
+          style: TextStyle(fontSize: 14,
+          letterSpacing: 1.5,
+          fontWeight: FontWeight.bold,
+          color: AppTheme.goldAccent)
         ),
         actions: [
           Padding(
