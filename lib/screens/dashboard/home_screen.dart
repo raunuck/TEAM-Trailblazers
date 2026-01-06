@@ -4,8 +4,9 @@ import '../../core/theme.dart';
 import '../../services/calendar_service.dart';
 import '../../core/theme_controller.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../models/activity_suggestion.dart'; // <--- Import your new "Brain"
-import 'package:url_launcher/url_launcher.dart'; // <--- Add this
+import '../../models/activity_suggestion.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../services/excel_service.dart';
 
 enum TaskStatus { scheduled, free, cancelled }
 
@@ -56,6 +57,33 @@ class _HomeScreenState extends State<HomeScreen> {
     ScheduleTask(id: '2', time: "10:30", endTime: "11:30", title: "Free Slot", status: TaskStatus.free),
     ScheduleTask(id: '3', time: "11:30", endTime: "12:30", title: "Database Sys", location: "Room 404"),
   ];
+  // Add this variable near your other services
+  final ExcelService _excelService = ExcelService();
+
+  Future<void> _importExcel() async {
+    try {
+      final platformFile = await _excelService.pickExcelFile();
+      if (platformFile == null) return; // User cancelled
+
+      setState(() => _isSyncing = true); // Reuse your loading state
+      
+      final newTasks = await _excelService.parseTimetable(platformFile);
+      
+      setState(() {
+        _schedule.addAll(newTasks);
+        _isSyncing = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Success! Added ${newTasks.length} classes.")),
+      );
+    } catch (e) {
+      setState(() => _isSyncing = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error importing file: $e")),
+      );
+    }
+  }
 
   @override
   void initState() {
@@ -221,13 +249,62 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode, color: textColor),
             onPressed: () => themeController.toggleTheme(),
           ),
-          IconButton(
-            icon: Icon(_isSyncing ? Icons.hourglass_top : Icons.sync, color: textColor),
-            onPressed: () {
-              print("BUTTON CLICKED! Starting Sync..."); // <--- ADD THIS LINE
-              _syncCalendar();
+          
+          // --- NEW SYNC MENU ---
+          PopupMenuButton<String>(
+            icon: _isSyncing 
+                ? const SizedBox(
+                    width: 20, height: 20, 
+                    child: CircularProgressIndicator(strokeWidth: 2)
+                  )
+                : Icon(Icons.add_to_photos_outlined, color: textColor), // New Icon
+            tooltip: "Add Schedule",
+            onSelected: (value) {
+              if (value == 'google') {
+                _syncCalendar();
+              } else if (value == 'excel') {
+                _importExcel();
+              }
             },
+            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+              // Option 1: Google Calendar
+              const PopupMenuItem<String>(
+                value: 'google',
+                child: Row(
+                  children: [
+                    Icon(Icons.calendar_month, color: Colors.blue),
+                    SizedBox(width: 12),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text("Google Calendar", style: TextStyle(fontWeight: FontWeight.bold)),
+                        Text("Sync events automatically", style: TextStyle(fontSize: 10, color: Colors.grey)),
+                      ],
+                    )
+                  ],
+                ),
+              ),
+              const PopupMenuDivider(),
+              // Option 2: Excel Import
+              const PopupMenuItem<String>(
+                value: 'excel',
+                child: Row(
+                  children: [
+                    Icon(Icons.table_view, color: Colors.green),
+                    SizedBox(width: 12),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text("Import Timetable", style: TextStyle(fontWeight: FontWeight.bold)),
+                        Text("Upload .xlsx file", style: TextStyle(fontSize: 10, color: Colors.grey)),
+                      ],
+                    )
+                  ],
+                ),
+              ),
+            ],
           ),
+          const SizedBox(width: 8), // Little padding at the end
         ],
       ),
       body: Column(

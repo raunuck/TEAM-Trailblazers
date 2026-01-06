@@ -11,7 +11,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  # Your Packages
+  # ... your other deps
+  file_picker: ^8.0.0  # To open the file dialog
+  excel: ^4.0.0        # To read the .xlsx file
 
   url_launcher: ^6.2.5
   cupertino_icons: ^1.0.8
