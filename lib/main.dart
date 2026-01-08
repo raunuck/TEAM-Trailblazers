@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'core/theme.dart';
-import 'core/theme_controller.dart'; // <--- Import the new controller
+import 'core/theme_controller.dart';
 import 'screens/login_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'screens/vault/vault_screen.dart';

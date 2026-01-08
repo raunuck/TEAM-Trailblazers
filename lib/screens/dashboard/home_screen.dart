@@ -3,8 +3,9 @@ import 'package:table_calendar/table_calendar.dart';
 import '../../core/theme.dart';
 import '../../services/calendar_service.dart';
 import '../../core/theme_controller.dart';
+import '../../screens/gamification/whiteboard_screen.dart'; // Whiteboard
+import '../../services/excel_service.dart'; // Excel
 
-// --- 1. DATA MODEL (State Management) ---
 enum TaskStatus { scheduled, free, cancelled }
 
 class ScheduleTask {
@@ -27,7 +28,6 @@ class ScheduleTask {
   });
 }
 
-// --- 2. THE MAIN SCREEN ---
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -38,12 +38,12 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   bool _isSyncing = false;
   final CalendarService _calendarService = CalendarService();
+  final ExcelService _excelService = ExcelService();
   
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
   CalendarFormat _calendarFormat = CalendarFormat.week; 
 
-  // Initial Mock Data converted to Model
   final List<ScheduleTask> _schedule = [
     ScheduleTask(id: '1', time: "09:00", endTime: "10:30", title: "Computer Arch", location: "Lab 3"),
     ScheduleTask(id: '2', time: "10:30", endTime: "11:30", title: "Free Slot", status: TaskStatus.free),
@@ -56,7 +56,190 @@ class _HomeScreenState extends State<HomeScreen> {
     _selectedDay = _focusedDay;
   }
 
-  // --- LOGIC: Cancel Class ---
+  Future<void> _importExcel() async {
+    try {
+      final platformFile = await _excelService.pickExcelFile();
+      if (platformFile == null) return; 
+
+      setState(() => _isSyncing = true);
+      
+      final newTasks = await _excelService.parseTimetable(platformFile);
+      
+      setState(() {
+        _schedule.addAll(newTasks);
+        _isSyncing = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Success! Added ${newTasks.length} classes.")),
+      );
+    } catch (e) {
+      setState(() => _isSyncing = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error importing file: $e")),
+      );
+    }
+  }
+
+  void _openWhiteboard() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const WhiteboardScreen()),
+    );
+
+    if (result != null && result is String) {
+      _parseAndAddTask(result);
+    }
+  }
+
+  // --- ROBUST SMART PARSER (Handles spaces & messy handwriting) ---
+  void _parseAndAddTask(String rawText) {
+    // 1. Pre-clean the text to help the AI
+    // Converts "12 / 01" to "12/01", "5 : 30" to "5:30"
+    String processingText = rawText.toLowerCase().trim();
+    
+    String title = rawText; 
+    DateTime now = DateTime.now();
+    DateTime targetDate = now;
+    TimeOfDay targetTime = TimeOfDay.now();
+    
+    bool dateFound = false;
+    bool timeFound = false;
+
+    // --- 2. DETECT DATE ---
+    // Matches: 12/01, 12-01, 12 / 01, 12 - 01
+    final numericDateRegex = RegExp(r'\b(\d{1,2})\s*[/-]\s*(\d{1,2})\b');
+    final numMatch = numericDateRegex.firstMatch(processingText);
+
+    // Matches: 12 jan, jan 12, 12th jan
+    final months = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+    final writtenDateRegex = RegExp(r'\b(\d{1,2})?(?:st|nd|rd|th)?\s*(' + months.join('|') + r')\s*(\d{1,2})?(?:st|nd|rd|th)?\b');
+    final writtenMatch = writtenDateRegex.firstMatch(processingText);
+
+    if (numMatch != null) {
+      dateFound = true;
+      int day = int.parse(numMatch.group(1)!);
+      int month = int.parse(numMatch.group(2)!);
+      targetDate = DateTime(now.year, month, day);
+      if (targetDate.isBefore(now.subtract(const Duration(days: 1)))) {
+        targetDate = DateTime(now.year + 1, month, day);
+      }
+      // Remove date from title
+      title = title.replaceAll(RegExp(numMatch.group(0)!, caseSensitive: false), "");
+    } 
+    else if (writtenMatch != null) {
+      dateFound = true;
+      String monthStr = writtenMatch.group(2)!;
+      int monthIndex = months.indexOf(monthStr) + 1;
+      String? dayStr = writtenMatch.group(1) ?? writtenMatch.group(3);
+      
+      if (dayStr != null) {
+        int day = int.parse(dayStr);
+        targetDate = DateTime(now.year, monthIndex, day);
+        if (targetDate.isBefore(now.subtract(const Duration(days: 1)))) {
+          targetDate = DateTime(now.year + 1, monthIndex, day);
+        }
+        // Remove date from title
+        String matchString = processingText.substring(writtenMatch.start, writtenMatch.end);
+        title = title.replaceAll(RegExp(matchString, caseSensitive: false), "");
+      }
+    } 
+    else if (processingText.contains("tomorrow")) {
+      dateFound = true;
+      targetDate = now.add(const Duration(days: 1));
+      title = title.replaceAll(RegExp(r'tomorrow', caseSensitive: false), "");
+    }
+
+    // --- 3. DETECT TIME ---
+    // Matches: 5pm, 5 pm, 5:30pm, 5.30 pm, 14:00
+    // Group 1: Hour, Group 2: Minute (optional), Group 3: am/pm
+    final timeRegex = RegExp(r'\b(\d{1,2})\s*(?:[:.]\s*(\d{2}))?\s*(am|pm)?\b');
+    final matches = timeRegex.allMatches(processingText);
+    
+    // We loop through matches to avoid picking up the date as a time (like 12 in 12/01)
+    for (final match in matches) {
+        // If this number was already used for the date, skip it (simple check)
+        if (dateFound && numMatch != null && match.group(0)!.contains(numMatch.group(0)!)) continue;
+
+        // Check if it looks like a time (has am/pm OR has a colon/dot)
+        bool hasMeridiem = match.group(3) != null;
+        bool hasColon = match.group(0)!.contains(":") || match.group(0)!.contains(".");
+        
+        if (hasMeridiem || hasColon) {
+            timeFound = true;
+            int hour = int.parse(match.group(1)!);
+            int minute = match.group(2) != null ? int.parse(match.group(2)!) : 0;
+            String? period = match.group(3);
+
+            if (period == 'pm' && hour != 12) hour += 12;
+            if (period == 'am' && hour == 12) hour = 0;
+
+            targetTime = TimeOfDay(hour: hour, minute: minute);
+            
+            // Remove time from title
+            String matchString = processingText.substring(match.start, match.end);
+            title = title.replaceAll(RegExp(matchString, caseSensitive: false), "");
+            break; // Stop after finding the first valid time
+        }
+    }
+
+    // --- 4. CLEANUP TITLE ---
+    title = title.replaceAll(RegExp(r'\s+'), ' ').trim();
+    if (title.isEmpty || title == "/") title = "Whiteboard Task";
+
+    // --- 5. CREATE TASK ---
+    final String startStr = "${targetTime.hour.toString().padLeft(2, '0')}:${targetTime.minute.toString().padLeft(2, '0')}";
+    final int endHour = (targetTime.hour + 1) % 24;
+    final String endStr = "${endHour.toString().padLeft(2, '0')}:${targetTime.minute.toString().padLeft(2, '0')}";
+    
+    setState(() {
+      _schedule.add(ScheduleTask(
+        id: DateTime.now().toString(),
+        time: startStr,
+        endTime: endStr,
+        title: title, 
+        location: "Created via Whiteboard",
+        status: TaskStatus.scheduled,
+        description: "Raw Input: '$rawText'",
+      ));
+      
+      // Navigate calendar to that day so user sees it
+      _selectedDay = targetDate;
+      _focusedDay = targetDate;
+    });
+
+    // --- 6. DEBUG FEEDBACK (Tells you what happened) ---
+    String feedback = "Created '$title'";
+    if (dateFound) feedback += " on ${targetDate.day}/${targetDate.month}";
+    else feedback += " (No Date Found)";
+    
+    if (timeFound) feedback += " at $startStr";
+    else feedback += " (No Time Found)";
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(feedback), 
+        duration: const Duration(seconds: 4),
+        action: SnackBarAction(label: "DEBUG", onPressed: (){
+           // Show raw text if user clicks Debug
+          showDialog(context: context, builder: (_) => AlertDialog(title: const Text("Raw Text Saw:"), content: Text(rawText)));
+        }),
+      ),
+    );
+  }
+
+  // Helper to print nice date
+  String _formatDate(DateTime d) {
+    return "${d.day}/${d.month}";
+  }
+
+  // --- 3. SYNC CALENDAR ---
+  Future<void> _syncCalendar() async {
+    setState(() => _isSyncing = true);
+    await Future.delayed(const Duration(seconds: 1));
+    setState(() => _isSyncing = false);
+  }
+
   void _cancelTask(int index) {
     setState(() {
       _schedule[index].status = TaskStatus.free;
@@ -68,7 +251,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // --- LOGIC: AI Suggestions ---
   void _openAISuggestions(int index) {
     showModalBottomSheet(
       context: context,
@@ -89,14 +271,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Future<void> _syncCalendar() async {
-    setState(() => _isSyncing = true);
-    // Simulate network delay
-    await Future.delayed(const Duration(seconds: 1));
-    setState(() => _isSyncing = false);
-    // In real app: Map fetched events to ScheduleTask objects here
-  }
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -104,6 +278,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        iconTheme: const IconThemeData(color: AppTheme.goldAccent),
         title: Text(
           "PlanBEE", 
           style: TextStyle(
@@ -120,15 +295,61 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode, color: textColor),
             onPressed: () => themeController.toggleTheme(),
           ),
-          IconButton(
-            icon: Icon(_isSyncing ? Icons.hourglass_top : Icons.sync, color: textColor),
-            onPressed: _syncCalendar,
+          
+          // --- FULL MENU WITH 3 OPTIONS ---
+          PopupMenuButton<String>(
+            icon: _isSyncing 
+                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                : Icon(Icons.add_circle_outline, color: textColor),
+            tooltip: "Add Schedule",
+            onSelected: (value) {
+              if (value == 'google') {
+                _syncCalendar();
+              } else if (value == 'excel') {
+                _importExcel();
+              } else if (value == 'whiteboard') {
+                _openWhiteboard();
+              }
+            },
+            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+              const PopupMenuItem<String>(
+                value: 'google',
+                child: Row(
+                  children: [
+                    Icon(Icons.sync, color: Colors.blue),
+                    SizedBox(width: 12),
+                    Text("Sync Calendar", style: TextStyle(fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              ),
+              const PopupMenuItem<String>(
+                value: 'excel',
+                child: Row(
+                  children: [
+                    Icon(Icons.table_view, color: Colors.green),
+                    SizedBox(width: 12),
+                    Text("Import Excel", style: TextStyle(fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              ),
+              const PopupMenuDivider(),
+              const PopupMenuItem<String>(
+                value: 'whiteboard',
+                child: Row(
+                  children: [
+                    Icon(Icons.draw, color: Colors.orange),
+                    SizedBox(width: 12),
+                    Text("Smart Whiteboard", style: TextStyle(fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              ),
+            ],
           ),
+          const SizedBox(width: 8),
         ],
       ),
       body: Column(
         children: [
-          // --- CALENDAR WIDGET ---
           TableCalendar(
             firstDay: DateTime.utc(2024, 1, 1),
             lastDay: DateTime.utc(2030, 12, 31),
@@ -162,20 +383,15 @@ class _HomeScreenState extends State<HomeScreen> {
           
           const Divider(),
 
-          // --- TASK LIST ---
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.all(16),
               itemCount: _schedule.length,
               itemBuilder: (context, index) {
                 final task = _schedule[index];
-
-                // 1. If it's a Free Slot (User cancelled or empty)
                 if (task.status == TaskStatus.free) {
                   return _buildFreeSlotCard(task, index);
                 }
-
-                // 2. If it's a Normal Scheduled Task
                 return _buildTaskCard(task, index, isDark, textColor);
               },
             ),
@@ -185,7 +401,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // --- WIDGET: Standard Task Card with 3-Dots ---
+  // --- RESTORED: Full Card Design ---
   Widget _buildTaskCard(ScheduleTask task, int index, bool isDark, Color textColor) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -214,7 +430,7 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 Text(task.title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textColor)),
                 Text(task.location, style: TextStyle(fontSize: 14, color: textColor.withOpacity(0.6))),
-                if (task.description != null) // Show description if added by AI
+                if (task.description != null)
                   Padding(
                     padding: const EdgeInsets.only(top: 4.0),
                     child: Text(task.description!, style: TextStyle(fontSize: 12, color: AppTheme.goldAccent, fontStyle: FontStyle.italic)),
@@ -222,7 +438,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
           ),
-          // --- THE 3 DOTS MENU ---
           PopupMenuButton<String>(
             icon: Icon(Icons.more_vert, color: textColor.withOpacity(0.5)),
             onSelected: (value) {
@@ -246,7 +461,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // --- WIDGET: Free Slot Card with AI Button ---
+  // --- RESTORED: Full Free Slot Design ---
   Widget _buildFreeSlotCard(ScheduleTask task, int index) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
@@ -254,7 +469,7 @@ class _HomeScreenState extends State<HomeScreen> {
       margin: const EdgeInsets.symmetric(vertical: 12),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF2A325E) : const Color(0xFFFCEFD0), // Using your "Gap" colors
+        color: isDark ? const Color(0xFF2A325E) : const Color(0xFFFCEFD0),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: AppTheme.goldAccent.withOpacity(0.5), style: BorderStyle.solid),
       ),
@@ -277,7 +492,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ],
               ),
-              // AI Button
               ElevatedButton.icon(
                 onPressed: () => _openAISuggestions(index),
                 icon: const Icon(Icons.psychology, size: 16, color: Colors.white),
@@ -303,7 +517,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-// --- 3. AI SUGGESTION SHEET ---
+// --- AI SUGGESTION SHEET (Unchanged) ---
 class _AISuggestionSheet extends StatefulWidget {
   final String timeSlot;
   final Function(String title, String desc) onSelect;
@@ -325,7 +539,7 @@ class _AISuggestionSheetState extends State<_AISuggestionSheet> {
   }
 
   Future<void> _fetchSuggestions() async {
-    await Future.delayed(const Duration(seconds: 2)); // Mock AI Delay
+    await Future.delayed(const Duration(seconds: 2));
     if (mounted) {
       setState(() {
         _isLoading = false;
