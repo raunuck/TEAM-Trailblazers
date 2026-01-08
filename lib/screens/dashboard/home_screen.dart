@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../models/activity_suggestion.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../services/excel_service.dart';
+import '../../screens/gamification/whiteboard_screen.dart';
 
 enum TaskStatus { scheduled, free, cancelled }
 
@@ -225,6 +226,120 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
+  // --- NEW: WHITEBOARD LOGIC ---
+  void _openWhiteboard() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const WhiteboardScreen()),
+    );
+
+    if (result != null && result is String) {
+      _parseAndAddTask(result);
+    }
+  }
+
+  // --- NEW: SMART PARSER FOR WHITEBOARD ---
+  void _parseAndAddTask(String rawText) {
+    String processingText = rawText.toLowerCase().trim();
+    String title = rawText; 
+    DateTime now = DateTime.now();
+    DateTime targetDate = now;
+    TimeOfDay targetTime = TimeOfDay.now();
+    
+    bool dateFound = false;
+    bool timeFound = false;
+
+    // Detect Date (12/01, Jan 12, etc.)
+    final numericDateRegex = RegExp(r'\b(\d{1,2})\s*[/-]\s*(\d{1,2})\b');
+    final numMatch = numericDateRegex.firstMatch(processingText);
+
+    final months = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+    final writtenDateRegex = RegExp(r'\b(\d{1,2})?(?:st|nd|rd|th)?\s*(' + months.join('|') + r')\s*(\d{1,2})?(?:st|nd|rd|th)?\b');
+    final writtenMatch = writtenDateRegex.firstMatch(processingText);
+
+    if (numMatch != null) {
+      dateFound = true;
+      int day = int.parse(numMatch.group(1)!);
+      int month = int.parse(numMatch.group(2)!);
+      targetDate = DateTime(now.year, month, day);
+      if (targetDate.isBefore(now.subtract(const Duration(days: 1)))) {
+        targetDate = DateTime(now.year + 1, month, day);
+      }
+      title = title.replaceAll(RegExp(numMatch.group(0)!, caseSensitive: false), "");
+    } else if (writtenMatch != null) {
+      dateFound = true;
+      String monthStr = writtenMatch.group(2)!;
+      int monthIndex = months.indexOf(monthStr) + 1;
+      String? dayStr = writtenMatch.group(1) ?? writtenMatch.group(3);
+      if (dayStr != null) {
+        int day = int.parse(dayStr);
+        targetDate = DateTime(now.year, monthIndex, day);
+        if (targetDate.isBefore(now.subtract(const Duration(days: 1)))) {
+          targetDate = DateTime(now.year + 1, monthIndex, day);
+        }
+        String matchString = processingText.substring(writtenMatch.start, writtenMatch.end);
+        title = title.replaceAll(RegExp(matchString, caseSensitive: false), "");
+      }
+    } else if (processingText.contains("tomorrow")) {
+      dateFound = true;
+      targetDate = now.add(const Duration(days: 1));
+      title = title.replaceAll(RegExp(r'tomorrow', caseSensitive: false), "");
+    }
+
+    // Detect Time (5pm, 14:00, etc.)
+    final timeRegex = RegExp(r'\b(\d{1,2})\s*(?:[:.]\s*(\d{2}))?\s*(am|pm)?\b');
+    final matches = timeRegex.allMatches(processingText);
+    
+    for (final match in matches) {
+        if (dateFound && numMatch != null && match.group(0)!.contains(numMatch.group(0)!)) continue;
+        bool hasMeridiem = match.group(3) != null;
+        bool hasColon = match.group(0)!.contains(":") || match.group(0)!.contains(".");
+        
+        if (hasMeridiem || hasColon) {
+            timeFound = true;
+            int hour = int.parse(match.group(1)!);
+            int minute = match.group(2) != null ? int.parse(match.group(2)!) : 0;
+            String? period = match.group(3);
+            if (period == 'pm' && hour != 12) hour += 12;
+            if (period == 'am' && hour == 12) hour = 0;
+            targetTime = TimeOfDay(hour: hour, minute: minute);
+            String matchString = processingText.substring(match.start, match.end);
+            title = title.replaceAll(RegExp(matchString, caseSensitive: false), "");
+            break;
+        }
+    }
+
+    title = title.replaceAll(RegExp(r'\s+'), ' ').trim();
+    if (title.isEmpty || title == "/") title = "Whiteboard Task";
+
+    final String startStr = "${targetTime.hour.toString().padLeft(2, '0')}:${targetTime.minute.toString().padLeft(2, '0')}";
+    final int endHour = (targetTime.hour + 1) % 24;
+    final String endStr = "${endHour.toString().padLeft(2, '0')}:${targetTime.minute.toString().padLeft(2, '0')}";
+    
+    setState(() {
+      _schedule.add(ScheduleTask(
+        id: DateTime.now().toString(),
+        time: startStr,
+        endTime: endStr,
+        title: title, 
+        location: "Created via Whiteboard",
+        status: TaskStatus.scheduled,
+        description: "Raw Input: '$rawText'",
+      ));
+      _selectedDay = targetDate;
+      _focusedDay = targetDate;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("Created '$title'${dateFound ? ' on ${targetDate.day}/${targetDate.month}' : ''} at $startStr"), 
+        duration: const Duration(seconds: 4),
+        action: SnackBarAction(label: "DEBUG", onPressed: (){
+           showDialog(context: context, builder: (_) => AlertDialog(title: const Text("Raw Text Saw:"), content: Text(rawText)));
+        }),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -257,7 +372,7 @@ class _HomeScreenState extends State<HomeScreen> {
             onPressed: () => themeController.toggleTheme(),
           ),
           
-          // This stays 'textColor' too
+          // --- UPDATED POPUP MENU (With Whiteboard) ---
           PopupMenuButton<String>(
             icon: _isSyncing 
                 ? const SizedBox(
@@ -271,6 +386,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 _syncCalendar();
               } else if (value == 'excel') {
                 _importExcel();
+              } else if (value == 'whiteboard') { // Added Whiteboard Check
+                _openWhiteboard();
               }
             },
             itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
@@ -284,7 +401,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
               ),
-              const PopupMenuDivider(),
               const PopupMenuItem<String>(
                 value: 'excel',
                 child: Row(
@@ -292,6 +408,18 @@ class _HomeScreenState extends State<HomeScreen> {
                     Icon(Icons.table_view, color: Colors.green),
                     SizedBox(width: 12),
                     Text("Import Timetable", style: TextStyle(fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              ),
+              const PopupMenuDivider(),
+              // --- WHITEBOARD ITEM ---
+              const PopupMenuItem<String>(
+                value: 'whiteboard',
+                child: Row(
+                  children: [
+                    Icon(Icons.draw, color: Colors.orange),
+                    SizedBox(width: 12),
+                    Text("Smart Whiteboard", style: TextStyle(fontWeight: FontWeight.bold)),
                   ],
                 ),
               ),
