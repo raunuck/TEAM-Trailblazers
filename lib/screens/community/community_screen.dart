@@ -1,235 +1,202 @@
 import 'package:flutter/material.dart';
-import '../../core/theme.dart'; // Keeping your import, but using standard colors below for portability
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:intl/intl.dart';
+import '../../core/theme.dart';
+import 'create_event_screen.dart';
 
-class CommunityScreen extends StatelessWidget {
+class CommunityScreen extends StatefulWidget {
   const CommunityScreen({super.key});
 
   @override
+  State<CommunityScreen> createState() => _CommunityScreenState();
+}
+
+class _CommunityScreenState extends State<CommunityScreen> {
+  // Stream to listen for real-time updates
+  final _eventStream = Supabase.instance.client
+      .from('community_events')
+      .stream(primaryKey: ['id'])
+      .order('event_time', ascending: true);
+
+  // --- LOGIC: Join / Leave ---
+  Future<void> _toggleJoin(String eventId, List<dynamic> currentParticipants) async {
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) return;
+
+    final List<String> participants = List<String>.from(currentParticipants);
+    final isJoined = participants.contains(userId);
+
+    if (isJoined) {
+      participants.remove(userId); // Leave
+    } else {
+      participants.add(userId); // Join
+    }
+
+    try {
+      await Supabase.instance.client
+          .from('community_events')
+          .update({'participants': participants})
+          .eq('id', eventId);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Action failed")));
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // 1. Theme Awareness Logic
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
-    // Define colors based on theme
-    final Color scaffoldBg = isDark ? const Color(0xFF121212) : Colors.grey.shade50;
-    final Color appBarBg = isDark ? const Color(0xFF1E1E1E) : Colors.white;
-    final Color primaryText = isDark ? Colors.white : const Color(0xFF222222); // Replaces AppTheme.darkBlue
-    final Color accentColor = Colors.blueAccent; // Replaces AppTheme.primaryBlue
+    final bgColor = isDark ? const Color(0xFF0A0C1D) : const Color(0xFFF9F9F9);
 
     return Scaffold(
-      backgroundColor: scaffoldBg,
+      backgroundColor: bgColor,
       appBar: AppBar(
-        title: Text(
-          "Campus Community", 
-          style: TextStyle(color: primaryText, fontWeight: FontWeight.bold)
-        ),
+        title: Text("Campus Community", style: TextStyle(
+          color: isDark ? Colors.white : AppTheme.darkBlue, 
+          fontWeight: FontWeight.bold
+        )),
         centerTitle: true,
-        backgroundColor: appBarBg,
+        backgroundColor: bgColor,
         elevation: 0,
-        surfaceTintColor: Colors.transparent, // Removes the slight wash in Material 3
         automaticallyImplyLeading: false,
-        iconTheme: IconThemeData(color: primaryText),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          // Logic to "Propose an Activity"
-        },
-        label: const Text("Start Activity", style: TextStyle(color: Colors.white)),
-        icon: const Icon(Icons.add, color: Colors.white),
-        backgroundColor: accentColor,
+        onPressed: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const CreateEventScreen()),
+        ),
+        label: const Text("Start Activity", style: TextStyle(color: AppTheme.darkBlue, fontWeight: FontWeight.bold)),
+        icon: const Icon(Icons.add, color: AppTheme.darkBlue),
+        backgroundColor: AppTheme.goldAccent,
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          Text(
-            "Happening Now", 
-            style: TextStyle(
-              fontSize: 18, 
-              fontWeight: FontWeight.bold, 
-              color: primaryText
-            )
-          ),
-          const SizedBox(height: 10),
-          
-          // 2. Rendering the Dummy Data using a generator
-          ..._dummyActivities.map((activity) => _buildActivityCard(
-            context: context,
-            activity: activity,
-            isDark: isDark,
-          )),
-        ],
+      body: StreamBuilder<List<Map<String, dynamic>>>(
+        stream: _eventStream,
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator(color: AppTheme.goldAccent));
+          }
+
+          final events = snapshot.data!;
+
+          if (events.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.diversity_3, size: 60, color: Colors.grey.withOpacity(0.3)),
+                  const SizedBox(height: 15),
+                  Text("No activities yet.", style: TextStyle(color: isDark ? Colors.grey : Colors.grey[600])),
+                  const SizedBox(height: 5),
+                  Text("Be the first to start one!", style: TextStyle(color: AppTheme.goldAccent, fontWeight: FontWeight.bold)),
+                ],
+              ),
+            );
+          }
+
+          return ListView.builder(
+            padding: const EdgeInsets.all(20),
+            itemCount: events.length,
+            itemBuilder: (context, index) {
+              return _buildActivityCard(
+                context: context, 
+                event: events[index], 
+                isDark: isDark
+              );
+            },
+          );
+        },
       ),
     );
   }
 
   Widget _buildActivityCard({
     required BuildContext context,
-    required Activity activity,
+    required Map<String, dynamic> event,
     required bool isDark,
   }) {
-    // Color Logic specific to cards
-    final cardBg = isDark ? const Color(0xFF1E1E1E) : Colors.white;
-    final borderColor = isDark ? Colors.grey[800]! : Colors.grey[200]!;
-    final textColor = isDark ? Colors.white : const Color(0xFF222222);
+    // Colors
+    final cardBg = isDark ? const Color(0xFF1C234C) : Colors.white;
+    final textColor = isDark ? Colors.white : AppTheme.darkBlue;
     final subTextColor = isDark ? Colors.grey[400] : Colors.grey[600];
 
-    return Card(
-      elevation: 0,
-      color: cardBg,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: borderColor),
-      ),
+    // Data Parsing
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    final participants = List<dynamic>.from(event['participants'] ?? []);
+    final isJoined = participants.contains(userId);
+    final date = DateTime.parse(event['event_time']);
+    final tags = List<String>.from(event['tags'] ?? []);
+
+    return Container(
       margin: const EdgeInsets.only(bottom: 16),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // Tags Row
-                Row(
-                  children: activity.tags.map((t) => Container(
-                    margin: const EdgeInsets.only(right: 8),
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      // Adaptive Tag Colors
-                      color: isDark ? Colors.blue.withOpacity(0.2) : Colors.blue.shade50,
-                      borderRadius: BorderRadius.circular(6)
-                    ),
-                    child: Text(
-                      t, 
-                      style: TextStyle(
-                        fontSize: 10, 
-                        color: isDark ? Colors.blue.shade200 : Colors.blue.shade800, 
-                        fontWeight: FontWeight.bold
-                      )
-                    ),
-                  )).toList(),
-                ),
-                Text(
-                  activity.timeLeft, 
-                  style: TextStyle(
-                    color: Colors.orange.shade700, 
-                    fontWeight: FontWeight.bold, 
-                    fontSize: 12
-                  )
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text(
-              activity.title, 
-              style: TextStyle(
-                fontSize: 18, 
-                fontWeight: FontWeight.bold, 
-                color: textColor
-              )
-            ),
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                Icon(Icons.location_on, size: 14, color: subTextColor),
-                const SizedBox(width: 4),
-                Text(
-                  activity.location, 
-                  style: TextStyle(color: subTextColor)
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Icon(Icons.person, size: 16, color: subTextColor),
-                    const SizedBox(width: 4),
-                    Text(
-                      "${activity.participants} joined", 
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold, 
-                        color: textColor
-                      )
-                    ),
-                  ],
-                ),
-                ElevatedButton(
-                  onPressed: () {}, 
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: isDark ? Colors.white : Colors.black,
-                    foregroundColor: isDark ? Colors.black : Colors.white,
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
-                    minimumSize: const Size(0, 36),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: cardBg,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: isJoined ? AppTheme.goldAccent : Colors.transparent, width: 1.5),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // Tags
+              Row(
+                children: tags.take(3).map((t) => Container(
+                  margin: const EdgeInsets.only(right: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppTheme.goldAccent.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(6)
                   ),
-                  child: const Text("Join"),
+                  child: Text(t, style: const TextStyle(fontSize: 10, color: AppTheme.goldAccent, fontWeight: FontWeight.bold)),
+                )).toList(),
+              ),
+              // Time Left Logic (Simple)
+              Text(
+                DateFormat('h:mm a').format(date), 
+                style: TextStyle(color: Colors.orange.shade700, fontWeight: FontWeight.bold, fontSize: 12)
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(event['title'] ?? 'Untitled', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textColor)),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              Icon(Icons.location_on, size: 14, color: subTextColor),
+              const SizedBox(width: 4),
+              Text(event['location'] ?? 'Unknown', style: TextStyle(color: subTextColor)),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.person, size: 16, color: subTextColor),
+                  const SizedBox(width: 4),
+                  Text("${participants.length} joined", style: TextStyle(fontWeight: FontWeight.bold, color: textColor)),
+                ],
+              ),
+              ElevatedButton(
+                onPressed: () => _toggleJoin(event['id'], participants),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: isJoined ? Colors.transparent : AppTheme.goldAccent,
+                  foregroundColor: isJoined ? textColor : AppTheme.darkBlue,
+                  elevation: 0,
+                  side: isJoined ? BorderSide(color: isDark ? Colors.grey : Colors.grey[300]!) : null,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
+                  minimumSize: const Size(0, 36),
                 ),
-              ],
-            )
-          ],
-        ),
+                child: Text(isJoined ? "Leave" : "Join"),
+              ),
+            ],
+          )
+        ],
       ),
     );
   }
 }
-
-// ---------------------------------------------------------------------------
-// 3. Data Model & Dummy Data
-// ---------------------------------------------------------------------------
-
-class Activity {
-  final String title;
-  final String location;
-  final int participants;
-  final String timeLeft;
-  final List<String> tags;
-
-  const Activity({
-    required this.title,
-    required this.location,
-    required this.participants,
-    required this.timeLeft,
-    required this.tags,
-  });
-}
-
-final List<Activity> _dummyActivities = [
-  const Activity(
-    title: "Flutter Study Group",
-    location: "Library Discussion Room",
-    participants: 4,
-    timeLeft: "Starts in 15 min",
-    tags: ["Tech", "Code"],
-  ),
-  const Activity(
-    title: "Impromptu Debate: AI Ethics",
-    location: "Cafeteria",
-    participants: 7,
-    timeLeft: "Active Now",
-    tags: ["Debate", "Social"],
-  ),
-  const Activity(
-    title: "Basketball 3v3 Match",
-    location: "Sports Complex Court A",
-    participants: 5,
-    timeLeft: "Starts in 1 hr",
-    tags: ["Sports", "Fitness"],
-  ),
-  const Activity(
-    title: "Midnight Gaming: Valorant",
-    location: "Hostel Block B Common Room",
-    participants: 9,
-    timeLeft: "Tonight 10 PM",
-    tags: ["Gaming", "Fun"],
-  ),
-  const Activity(
-    title: "Hackathon Brainstorming",
-    location: "Tech Park Lobby",
-    participants: 3,
-    timeLeft: "Active Now",
-    tags: ["Innovation", "Ideas"],
-  ),
-];

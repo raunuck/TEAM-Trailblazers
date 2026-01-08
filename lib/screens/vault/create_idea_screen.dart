@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:supabase_flutter/supabase_flutter.dart'; // Import Supabase
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/theme.dart';
 
 class CreateIdeaScreen extends StatefulWidget {
-  const CreateIdeaScreen({super.key});
+  // --- NEW: Accept the idea data for editing ---
+  final Map<String, dynamic>? idea; 
+
+  const CreateIdeaScreen({super.key, this.idea});
 
   @override
   State<CreateIdeaScreen> createState() => _CreateIdeaScreenState();
@@ -15,8 +18,19 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
   final TextEditingController _descController = TextEditingController();
   
   String _status = 'Not Started';
-  bool _isSaving = false; // To show loading state
+  bool _isSaving = false;
   final List<String> _statusOptions = ['Not Started', 'In Progress', 'Completed'];
+
+  @override
+  void initState() {
+    super.initState();
+    // --- NEW: Pre-fill fields if we are Editing ---
+    if (widget.idea != null) {
+      _titleController.text = widget.idea!['title'] ?? '';
+      _descController.text = widget.idea!['description'] ?? '';
+      _status = widget.idea!['status'] ?? 'Not Started';
+    }
+  }
 
   @override
   void dispose() {
@@ -39,12 +53,24 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
          throw Exception("User not logged in");
       }
 
-      await Supabase.instance.client.from('ideas').insert({
-        'user_id': userId,
-        'title': _titleController.text.trim(),
-        'description': _descController.text.trim(),
-        'status': _status,
-      });
+      // --- UPDATED LOGIC: Check if Updating or Inserting ---
+      if (widget.idea == null) {
+        // CREATE NEW
+        await Supabase.instance.client.from('ideas').insert({
+          'user_id': userId,
+          'title': _titleController.text.trim(),
+          'description': _descController.text.trim(),
+          'status': _status,
+          // 'created_at' is usually handled by default in Supabase, but you can send it if needed
+        });
+      } else {
+        // UPDATE EXISTING
+        await Supabase.instance.client.from('ideas').update({
+          'title': _titleController.text.trim(),
+          'description': _descController.text.trim(),
+          'status': _status,
+        }).eq('id', widget.idea!['id']); // Identify which row to update
+      }
 
       if (mounted) {
         Navigator.pop(context); // Close screen on success
@@ -66,6 +92,9 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
     final Color hintColor = (isDark ? Colors.grey[600] : Colors.grey[400])!;
     final String dateString = DateFormat('MMM dd, yyyy').format(DateTime.now());
 
+    // Dynamic Title
+    final screenTitle = widget.idea == null ? "NEW VAULT ENTRY" : "EDIT ENTRY";
+
     return Scaffold(
       backgroundColor: bgColor,
       appBar: AppBar(
@@ -76,9 +105,9 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         centerTitle: true,
-        title: const Text(
-          "NEW VAULT ENTRY", 
-          style: TextStyle(fontSize: 14,
+        title: Text(
+          screenTitle, 
+          style: const TextStyle(fontSize: 14,
           letterSpacing: 1.5,
           fontWeight: FontWeight.bold,
           color: AppTheme.goldAccent)
@@ -87,7 +116,7 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
             child: TextButton(
-              onPressed: _isSaving ? null : _saveIdea, // Disable button if saving
+              onPressed: _isSaving ? null : _saveIdea,
               style: TextButton.styleFrom(
                 backgroundColor: AppTheme.goldAccent,
                 foregroundColor: AppTheme.darkBlue,

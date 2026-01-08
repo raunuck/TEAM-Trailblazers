@@ -23,19 +23,19 @@ class _VaultScreenState extends State<VaultScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title:  Text("Vault", style: TextStyle(
-          color: isDark ? Color.fromARGB(255, 255, 255, 255) : const Color(0xFF0A0C1D),
+        title: Text("Vault", style: TextStyle(
+          color: isDark ? const Color.fromARGB(255, 255, 255, 255) : const Color(0xFF0A0C1D),
           fontWeight: FontWeight.bold, 
           letterSpacing: 1.2
           )),
         centerTitle: true,
         automaticallyImplyLeading: false,
-        backgroundColor: isDark ? const Color(0xFF0A0C1D) : Color.fromARGB(255, 255, 255, 255),
+        backgroundColor: isDark ? const Color(0xFF0A0C1D) : const Color.fromARGB(255, 255, 255, 255),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const CreateIdeaScreen()),
+          MaterialPageRoute(builder: (context) => const CreateIdeaScreen()), // No idea passed = Create Mode
         ),
         backgroundColor: AppTheme.goldAccent,
         icon: const Icon(Icons.edit, color: AppTheme.darkBlue),
@@ -95,52 +95,65 @@ class _VaultScreenState extends State<VaultScreen> {
       default: statusColor = Colors.grey;
     }
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1C234C) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.goldAccent.withValues(alpha: 0.2)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          )
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Text(
-                  idea['title'] ?? '',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: isDark ? Colors.white : AppTheme.darkBlue),
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: statusColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: statusColor.withValues(alpha: 0.5)),
-                ),
-                child: Text(idea['status'] ?? '', style: TextStyle(color: statusColor, fontSize: 11, fontWeight: FontWeight.bold)),
-              ),
-            ],
+    // --- WRAPPER ADDED HERE ---
+    return GestureDetector(
+      onTap: () {
+        // Navigate to CreateIdeaScreen passing the 'idea' map
+        // This triggers "Edit Mode" in the other screen
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => CreateIdeaScreen(idea: idea), 
           ),
-          const SizedBox(height: 8),
-          Text(
-            idea['description'] ?? '',
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[700], fontSize: 14),
-          ),
-        ],
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1C234C) : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppTheme.goldAccent.withOpacity(0.2)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            )
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    idea['title'] ?? '',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: isDark ? Colors.white : AppTheme.darkBlue),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: statusColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: statusColor.withOpacity(0.5)),
+                  ),
+                  child: Text(idea['status'] ?? '', style: TextStyle(color: statusColor, fontSize: 11, fontWeight: FontWeight.bold)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              idea['description'] ?? '',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[700], fontSize: 14),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -151,7 +164,7 @@ class _VaultScreenState extends State<VaultScreen> {
         padding: const EdgeInsets.only(top: 100),
         child: Column(
           children: [
-            Icon(Icons.inventory_2_outlined, size: 60, color: Colors.grey.withValues(alpha: 0.3)),
+            Icon(Icons.inventory_2_outlined, size: 60, color: Colors.grey.withOpacity(0.3)),
             const SizedBox(height: 15),
             Text("Your vault is empty.", style: TextStyle(color: isDark ? Colors.grey : Colors.grey[600], fontSize: 16)),
           ],
