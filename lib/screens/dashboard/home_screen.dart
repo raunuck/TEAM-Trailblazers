@@ -233,6 +233,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        // --- CHANGE IS HERE ---
+        // This sets the default "Leading" icon (Back Arrow) to Gold.
+        // Your action buttons (Sync, Theme) won't change because they have explicit colors below.
+        iconTheme: const IconThemeData(color: AppTheme.goldAccent),
+        // ----------------------
+
         title: Text(
           "PlanBEE", 
           style: TextStyle(
@@ -245,19 +251,20 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         actions: [
+          // This stays 'textColor' (White/Black) because you explicitly set it
           IconButton(
             icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode, color: textColor),
             onPressed: () => themeController.toggleTheme(),
           ),
           
-          // --- NEW SYNC MENU ---
+          // This stays 'textColor' too
           PopupMenuButton<String>(
             icon: _isSyncing 
                 ? const SizedBox(
                     width: 20, height: 20, 
                     child: CircularProgressIndicator(strokeWidth: 2)
                   )
-                : Icon(Icons.add_to_photos_outlined, color: textColor), // New Icon
+                : Icon(Icons.add_to_photos_outlined, color: textColor),
             tooltip: "Add Schedule",
             onSelected: (value) {
               if (value == 'google') {
@@ -267,49 +274,35 @@ class _HomeScreenState extends State<HomeScreen> {
               }
             },
             itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-              // Option 1: Google Calendar
               const PopupMenuItem<String>(
                 value: 'google',
                 child: Row(
                   children: [
                     Icon(Icons.calendar_month, color: Colors.blue),
                     SizedBox(width: 12),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text("Google Calendar", style: TextStyle(fontWeight: FontWeight.bold)),
-                        Text("Sync events automatically", style: TextStyle(fontSize: 10, color: Colors.grey)),
-                      ],
-                    )
+                    Text("Google Calendar", style: TextStyle(fontWeight: FontWeight.bold)),
                   ],
                 ),
               ),
               const PopupMenuDivider(),
-              // Option 2: Excel Import
               const PopupMenuItem<String>(
                 value: 'excel',
                 child: Row(
                   children: [
                     Icon(Icons.table_view, color: Colors.green),
                     SizedBox(width: 12),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text("Import Timetable", style: TextStyle(fontWeight: FontWeight.bold)),
-                        Text("Upload .xlsx file", style: TextStyle(fontSize: 10, color: Colors.grey)),
-                      ],
-                    )
+                    Text("Import Timetable", style: TextStyle(fontWeight: FontWeight.bold)),
                   ],
                 ),
               ),
             ],
           ),
-          const SizedBox(width: 8), // Little padding at the end
+          const SizedBox(width: 8), 
         ],
       ),
       body: Column(
         children: [
-          // --- CALENDAR WIDGET ---
+          // ... (Rest of your body code remains exactly the same)
           TableCalendar(
             firstDay: DateTime.utc(2024, 1, 1),
             lastDay: DateTime.utc(2030, 12, 31),
@@ -343,20 +336,15 @@ class _HomeScreenState extends State<HomeScreen> {
           
           const Divider(),
 
-          // --- TASK LIST ---
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.all(16),
               itemCount: _schedule.length,
               itemBuilder: (context, index) {
                 final task = _schedule[index];
-
-                // 1. If it's a Free Slot (User cancelled or empty)
                 if (task.status == TaskStatus.free) {
                   return _buildFreeSlotCard(task, index);
                 }
-
-                // 2. If it's a Normal Scheduled Task
                 return _buildTaskCard(task, index, isDark, textColor);
               },
             ),

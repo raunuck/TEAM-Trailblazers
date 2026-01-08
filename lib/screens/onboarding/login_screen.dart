@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/theme.dart';
-import '../../screens/main_layout.dart';
+import '../../screens/main_layout.dart'; // Ensure this path is correct
 import '../onboarding/interest_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -15,16 +15,11 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   
-  // Toggle: Are we Logging In or Signing Up?
   bool _isLogin = true; 
-  
-  // Toggle: Student vs Teacher
   bool isStudent = true; 
-  
   bool _isLoading = false;
 
   // --- AUTH LOGIC ---
-
   Future<void> _submit() async {
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
@@ -38,32 +33,30 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       if (_isLogin) {
-        // --- 1. LOGIN MODE ---
+        // --- 1. LOGIN ---
         final AuthResponse res = await Supabase.instance.client.auth.signInWithPassword(
           email: email,
           password: password,
         );
 
-        // Check if user exists, then check interests
         if (res.user != null && mounted) {
           await _checkInterestsAndNavigate(res.user!.id);
         }
       } else {
-        // --- 2. SIGN UP MODE ---
+        // --- 2. SIGN UP ---
         final AuthResponse response = await Supabase.instance.client.auth.signUp(
           email: email,
           password: password,
         );
 
         if (response.user != null) {
-          // Check if email confirmation is required/missing
           if (response.session == null) {
             _showSnackBar("Please check your email to confirm your account.", Colors.blue);
             setState(() => _isLoading = false);
             return;
           }
 
-          // Create the profile row (Safe Insert)
+          // Create Profile
           await Supabase.instance.client.from('profiles').upsert({
             'id': response.user!.id,
             'email': email,
@@ -73,7 +66,6 @@ class _LoginScreenState extends State<LoginScreen> {
           
           if (mounted) {
             _showSnackBar("Account created successfully!", Colors.green);
-             // New users ALWAYS go to Interest Screen
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(builder: (context) => InterestScreen(isStudent: isStudent)),
@@ -90,8 +82,6 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  // --- HELPER FUNCTIONS (Placed here, inside the class) ---
-
   Future<void> _checkInterestsAndNavigate(String userId) async {
     try {
       final data = await Supabase.instance.client
@@ -103,29 +93,23 @@ class _LoginScreenState extends State<LoginScreen> {
       bool hasInterests = false;
       if (data != null && data['interests'] != null) {
         final List interests = data['interests'];
-        if (interests.isNotEmpty) {
-          hasInterests = true;
-        }
+        if (interests.isNotEmpty) hasInterests = true;
       }
 
       if (!mounted) return;
 
       if (hasInterests) {
-        // Existing user -> Dashboard
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const MainLayout()),
         );
       } else {
-        // Incomplete profile -> Interest Screen
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => InterestScreen(isStudent: isStudent)),
         );
       }
     } catch (e) {
-      debugPrint("Error checking profile: $e");
-      // Fallback: If check fails, just go to Interest Screen to be safe
       if (mounted) {
         Navigator.pushReplacement(
           context,
@@ -142,10 +126,20 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   // --- UI CODE ---
-  
   @override
   Widget build(BuildContext context) {
+    // 1. Theme Awareness Logic
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    // Define dynamic colors
+    final Color textColor = isDark ? Colors.white : AppTheme.darkBlue;
+    final Color subTextColor = isDark ? Colors.grey[400]! : Colors.grey[600]!;
+    final Color containerBg = isDark ? const Color(0xFF2C2C2C) : Colors.grey[200]!;
+    final Color inputFillColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+    final Color inputBorderColor = isDark ? Colors.grey[700]! : Colors.grey;
+
     return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor, // Auto adapts
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
@@ -159,7 +153,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   _isLogin ? "Welcome Back," : "Create Account,",
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: const Color(0xFFCCA35E),
+                        color: AppTheme.goldAccent, // Keeping Gold constant
                       ),
                 ),
                 const SizedBox(height: 8),
@@ -168,46 +162,47 @@ class _LoginScreenState extends State<LoginScreen> {
                       ? "Let's turn your downtime into growth." 
                       : "Start your learning journey today.",
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: Colors.grey[600],
+                        color: subTextColor,
                       ),
                 ),
                 const SizedBox(height: 40),
 
-                // Role Toggle
+                // Role Toggle (Student / Teacher)
                 Container(
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
-                    color: Colors.grey[200],
+                    color: containerBg,
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Row(
                     children: [
-                      _buildRoleButton("Student", true),
-                      _buildRoleButton("Teacher", false),
+                      _buildRoleButton("Student", true, isDark),
+                      _buildRoleButton("Teacher", false, isDark),
                     ],
                   ),
                 ),
                 const SizedBox(height: 30),
 
                 // Inputs
-                TextFormField(
+                _buildTextField(
                   controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(
-                    labelText: "Email Address",
-                    prefixIcon: Icon(Icons.email_outlined),
-                    border: OutlineInputBorder(),
-                  ),
+                  label: "Email Address",
+                  icon: Icons.email_outlined,
+                  isDark: isDark,
+                  fillColor: inputFillColor,
+                  borderColor: inputBorderColor,
+                  textColor: textColor,
                 ),
                 const SizedBox(height: 20),
-                TextFormField(
+                _buildTextField(
                   controller: _passwordController,
-                  obscureText: true,
-                  decoration: const InputDecoration(
-                    labelText: "Password",
-                    prefixIcon: Icon(Icons.lock_outline),
-                    border: OutlineInputBorder(),
-                  ),
+                  label: "Password",
+                  icon: Icons.lock_outline,
+                  isObscure: true,
+                  isDark: isDark,
+                  fillColor: inputFillColor,
+                  borderColor: inputBorderColor,
+                  textColor: textColor,
                 ),
                 const SizedBox(height: 40),
 
@@ -218,8 +213,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : _submit,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFCCA35E),
-                      foregroundColor: AppTheme.primaryBlue,
+                      backgroundColor: AppTheme.goldAccent,
+                      foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                     child: _isLoading 
@@ -244,12 +239,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: RichText(
                       text: TextSpan(
                         text: _isLogin ? "New here? " : "Already have an account? ",
-                        style: const TextStyle(color: Colors.grey, fontSize: 16),
+                        style: TextStyle(color: subTextColor, fontSize: 16),
                         children: [
                           TextSpan(
                             text: _isLogin ? "Create Account" : "Sign In",
                             style: TextStyle(
-                              color: const Color.fromARGB(255, 255, 255, 255),
+                              color: isDark ? AppTheme.goldAccent : AppTheme.primaryBlue,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -266,8 +261,48 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildRoleButton(String text, bool value) {
+  // Helper for consistent TextFields across themes
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    required bool isDark,
+    required Color fillColor,
+    required Color borderColor,
+    required Color textColor,
+    bool isObscure = false,
+  }) {
+    return TextFormField(
+      controller: controller,
+      obscureText: isObscure,
+      style: TextStyle(color: textColor),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[700]),
+        prefixIcon: Icon(icon, color: isDark ? Colors.grey[400] : Colors.grey[700]),
+        filled: true,
+        fillColor: fillColor,
+        enabledBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: borderColor),
+          borderRadius: BorderRadius.circular(4),
+        ),
+        focusedBorder: const OutlineInputBorder(
+          borderSide: BorderSide(color: AppTheme.goldAccent, width: 2),
+        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(4)),
+      ),
+    );
+  }
+
+  // Helper for Role Buttons
+  Widget _buildRoleButton(String text, bool value, bool isDark) {
     bool isSelected = isStudent == value;
+    
+    // Determine button colors based on selection and theme
+    Color activeBg = isDark ? Colors.grey[800]! : Colors.white;
+    Color activeText = isDark ? AppTheme.goldAccent : AppTheme.primaryBlue;
+    Color inactiveText = isDark ? Colors.grey[400]! : Colors.grey;
+
     return Expanded(
       child: GestureDetector(
         onTap: () {
@@ -279,7 +314,7 @@ class _LoginScreenState extends State<LoginScreen> {
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: isSelected ? Colors.white : Colors.transparent,
+            color: isSelected ? activeBg : Colors.transparent,
             borderRadius: BorderRadius.circular(10),
             boxShadow: isSelected
                 ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))]
@@ -290,7 +325,7 @@ class _LoginScreenState extends State<LoginScreen> {
             text,
             style: TextStyle(
               fontWeight: FontWeight.bold,
-              color: isSelected ? AppTheme.primaryBlue : Colors.grey,
+              color: isSelected ? activeText : inactiveText,
             ),
           ),
         ),

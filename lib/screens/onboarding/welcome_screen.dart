@@ -8,8 +8,14 @@ class WelcomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    // 2. Define Dynamic Colors
+    final Color backgroundColor = Theme.of(context).scaffoldBackgroundColor;
+    final Color mainTextColor = isDark ? Colors.white : AppTheme.darkBlue;
+    final Color subTextColor = isDark ? Colors.grey.shade400 : Colors.grey.shade600;
     return Scaffold(
-      backgroundColor: AppTheme.darkBlue,
+      backgroundColor: backgroundColor,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -18,8 +24,7 @@ class WelcomeScreen extends StatelessWidget {
             children: [
               const Spacer(flex: 2),
               
-              // --- FIX 1: CUSTOM LOGO ---
-              // Uses the image you added to assets
+              
               Image.asset(
                 'assets/logo.png',
                 height: 150, // Adjust size as needed
@@ -32,7 +37,7 @@ class WelcomeScreen extends StatelessWidget {
               const SizedBox(height: 24),
               const Text("PlanBEE", style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppTheme.goldAccent, letterSpacing: 1.5)),
               const SizedBox(height: 8),
-              Text("Organize your life, like a hive.", style: TextStyle(fontSize: 16, color: Colors.white.withOpacity(0.7))),
+              Text("Organize your life, like a hive.", style: TextStyle(fontSize: 16, color: isDark ? Colors.white : AppTheme.darkBlue)),
               const Spacer(flex: 2),
               
               // --- BUTTON ---
