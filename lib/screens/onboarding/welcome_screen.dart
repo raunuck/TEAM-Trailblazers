@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
-import 'login_screen.dart'; // Navigation to next step
+import 'login_screen.dart';
 
 
 class WelcomeScreen extends StatelessWidget {
@@ -10,7 +10,6 @@ class WelcomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
-    // 2. Define Dynamic Colors
     final Color backgroundColor = Theme.of(context).scaffoldBackgroundColor;
     final Color mainTextColor = isDark ? Colors.white : AppTheme.darkBlue;
     final Color subTextColor = isDark ? Colors.grey.shade400 : Colors.grey.shade600;
@@ -27,9 +26,8 @@ class WelcomeScreen extends StatelessWidget {
               
               Image.asset(
                 'assets/logo.png',
-                height: 150, // Adjust size as needed
+                height: 150,
                 errorBuilder: (context, error, stackTrace) {
-                  // Fallback if image isn't found yet
                   return const Icon(Icons.hive_outlined, size: 100, color: AppTheme.goldAccent);
                 },
               ),
@@ -40,13 +38,11 @@ class WelcomeScreen extends StatelessWidget {
               Text("Organize your life, like a hive.", style: TextStyle(fontSize: 16, color: isDark ? Colors.white : AppTheme.darkBlue)),
               const Spacer(flex: 2),
               
-              // --- BUTTON ---
               SizedBox(
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton.icon(
                   onPressed: () {
-                    // Navigate to the NEW Auth Screen (User/Pass)
                     Navigator.push(context, MaterialPageRoute(builder: (context) => const LoginScreen()));
                   },
                   icon: const Icon(Icons.arrow_forward, color: AppTheme.darkBlue),

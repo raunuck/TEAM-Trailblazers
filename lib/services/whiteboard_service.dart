@@ -2,7 +2,6 @@ import 'package:google_mlkit_digital_ink_recognition/google_mlkit_digital_ink_re
 import 'package:flutter/material.dart';
 
 class WhiteboardService {
-  // Use 'en-US' for English. 
   final String _languageCode = 'en-US';
   late ml_kit.DigitalInkRecognizer _recognizer;
   final ml_kit.DigitalInkRecognizerModelManager _modelManager = ml_kit.DigitalInkRecognizerModelManager();
@@ -11,7 +10,6 @@ class WhiteboardService {
     _recognizer = ml_kit.DigitalInkRecognizer(languageCode: _languageCode);
   }
 
-  // 1. Check and Download the AI Model
   Future<String> checkModelStatus() async {
     try {
       final isDownloaded = await _modelManager.isModelDownloaded(_languageCode);
@@ -25,21 +23,18 @@ class WhiteboardService {
     }
   }
 
-  // 2. Recognize Handwriting
   Future<String> recognizeText(List<ml_kit.Stroke> strokes) async {
     try {
       if (strokes.isEmpty) return "";
 
-      // Create Ink object
       final ink = ml_kit.Ink();
       ink.strokes.addAll(strokes);
 
-      // Recognize
       final candidates = await _recognizer.recognize(ink);
       
       if (candidates.isNotEmpty) {
         String result = candidates.first.text;
-        debugPrint("Recognized: $result"); // Debug log
+        debugPrint("Recognized: $result");
         return result;
       }
       return "";
@@ -54,7 +49,6 @@ class WhiteboardService {
   }
 }
 
-// Helper Classes
 class DrawPoint {
   final Offset offset;
   final int timestamp;

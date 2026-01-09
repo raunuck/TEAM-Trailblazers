@@ -4,7 +4,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/theme.dart';
 
 class CreateIdeaScreen extends StatefulWidget {
-  // --- NEW: Accept the idea data for editing ---
   final Map<String, dynamic>? idea; 
 
   const CreateIdeaScreen({super.key, this.idea});
@@ -24,7 +23,6 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
   @override
   void initState() {
     super.initState();
-    // --- NEW: Pre-fill fields if we are Editing ---
     if (widget.idea != null) {
       _titleController.text = widget.idea!['title'] ?? '';
       _descController.text = widget.idea!['description'] ?? '';
@@ -50,30 +48,26 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
     try {
       final userId = Supabase.instance.client.auth.currentUser?.id;
       if (userId == null) {
-         throw Exception("User not logged in");
+        throw Exception("User not logged in");
       }
 
-      // --- UPDATED LOGIC: Check if Updating or Inserting ---
       if (widget.idea == null) {
-        // CREATE NEW
         await Supabase.instance.client.from('ideas').insert({
           'user_id': userId,
           'title': _titleController.text.trim(),
           'description': _descController.text.trim(),
           'status': _status,
-          // 'created_at' is usually handled by default in Supabase, but you can send it if needed
         });
       } else {
-        // UPDATE EXISTING
         await Supabase.instance.client.from('ideas').update({
           'title': _titleController.text.trim(),
           'description': _descController.text.trim(),
           'status': _status,
-        }).eq('id', widget.idea!['id']); // Identify which row to update
+        }).eq('id', widget.idea!['id']);
       }
 
       if (mounted) {
-        Navigator.pop(context); // Close screen on success
+        Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
@@ -92,7 +86,6 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
     final Color hintColor = (isDark ? Colors.grey[600] : Colors.grey[400])!;
     final String dateString = DateFormat('MMM dd, yyyy').format(DateTime.now());
 
-    // Dynamic Title
     final screenTitle = widget.idea == null ? "NEW VAULT ENTRY" : "EDIT ENTRY";
 
     return Scaffold(
@@ -134,7 +127,6 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // STATUS BAR
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 24),
@@ -174,7 +166,6 @@ class _CreateIdeaScreenState extends State<CreateIdeaScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            // BLUEPRINT AREA
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: IntrinsicHeight(

@@ -11,7 +11,6 @@ class VaultScreen extends StatefulWidget {
 }
 
 class _VaultScreenState extends State<VaultScreen> {
-  // Stream that listens to the 'ideas' table in real-time
   final _ideaStream = Supabase.instance.client
       .from('ideas')
       .stream(primaryKey: ['id'])
@@ -35,7 +34,7 @@ class _VaultScreenState extends State<VaultScreen> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const CreateIdeaScreen()), // No idea passed = Create Mode
+          MaterialPageRoute(builder: (context) => const CreateIdeaScreen()),
         ),
         backgroundColor: AppTheme.goldAccent,
         icon: const Icon(Icons.edit, color: AppTheme.darkBlue),
@@ -47,19 +46,16 @@ class _VaultScreenState extends State<VaultScreen> {
       body: StreamBuilder<List<Map<String, dynamic>>>(
         stream: _ideaStream,
         builder: (context, snapshot) {
-          // 1. Loading State
           if (!snapshot.hasData) {
             return const Center(child: CircularProgressIndicator(color: AppTheme.goldAccent));
           }
 
           final ideas = snapshot.data!;
 
-          // 2. Empty State
           if (ideas.isEmpty) {
             return _buildEmptyState(isDark);
           }
 
-          // 3. Data State
           return ListView(
             padding: const EdgeInsets.all(20),
             children: [
@@ -95,11 +91,8 @@ class _VaultScreenState extends State<VaultScreen> {
       default: statusColor = Colors.grey;
     }
 
-    // --- WRAPPER ADDED HERE ---
     return GestureDetector(
       onTap: () {
-        // Navigate to CreateIdeaScreen passing the 'idea' map
-        // This triggers "Edit Mode" in the other screen
         Navigator.push(
           context,
           MaterialPageRoute(

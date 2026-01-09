@@ -19,9 +19,8 @@ class ScheduleTask {
   String location;
   TaskStatus status;
   String? description;
-  // --- NEW FIELDS ---
   String? resourceUrl;
-  String? resourceType; // "Video", "Article", etc.
+  String? resourceType;
 
   ScheduleTask({
     required this.id,
@@ -36,7 +35,6 @@ class ScheduleTask {
   });
 }
 
-// --- 2. THE MAIN SCREEN ---
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -52,21 +50,19 @@ class _HomeScreenState extends State<HomeScreen> {
   DateTime? _selectedDay;
   CalendarFormat _calendarFormat = CalendarFormat.week; 
 
-  // Initial Mock Data converted to Model
   final List<ScheduleTask> _schedule = [
     ScheduleTask(id: '1', time: "09:00", endTime: "10:30", title: "Computer Arch", location: "Lab 3"),
     ScheduleTask(id: '2', time: "10:30", endTime: "11:30", title: "Free Slot", status: TaskStatus.free),
     ScheduleTask(id: '3', time: "11:30", endTime: "12:30", title: "Database Sys", location: "Room 404"),
   ];
-  // Add this variable near your other services
   final ExcelService _excelService = ExcelService();
 
   Future<void> _importExcel() async {
     try {
       final platformFile = await _excelService.pickExcelFile();
-      if (platformFile == null) return; // User cancelled
+      if (platformFile == null) return;
 
-      setState(() => _isSyncing = true); // Reuse your loading state
+      setState(() => _isSyncing = true);
       
       final newTasks = await _excelService.parseTimetable(platformFile);
       
@@ -92,7 +88,6 @@ class _HomeScreenState extends State<HomeScreen> {
     _selectedDay = _focusedDay;
   }
 
-// --- HELPER: Open the link ---
   Future<void> _launchURL(String urlString) async {
     try {
       final Uri url = Uri.parse(urlString);
@@ -107,7 +102,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // --- HELPER: Pick icon based on resource type ---
   IconData _getIconForType(String type) {
     switch (type) {
       case 'Video': return Icons.play_circle_outline;
@@ -120,30 +114,23 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
 
-// --- LOGIC: Merge Consecutive Free Slots ---
   void _mergeFreeSlots() {
-    // We iterate backwards so removing items doesn't mess up the loop index
     for (int i = _schedule.length - 2; i >= 0; i--) {
       final current = _schedule[i];
       final next = _schedule[i + 1];
 
-      // If BOTH are free, merge them!
       if (current.status == TaskStatus.free && next.status == TaskStatus.free) {
         setState(() {
-          // 1. Extend the current slot's end time
           current.endTime = next.endTime;
           
-          // 2. Update the title to show it's a big block
           current.title = "Extended Free Slot";
           
-          // 3. Remove the next slot (since it's now absorbed)
           _schedule.removeAt(i + 1);
         });
       }
     }
   }
 
-// --- HELPER: Calculate minutes between "10:30" and "11:45" ---
   int _calculateDuration(String startStr, String endStr) {
     try {
       final startParts = startStr.split(':').map(int.parse).toList();
@@ -154,20 +141,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
       return endMinutes - startMinutes;
     } catch (e) {
-      return 30; // Default to 30 mins if parsing fails
+      return 30;
     }
   }
 
-  // --- LOGIC: Cancel Class ---
   void _cancelTask(int index) {
     setState(() {
       _schedule[index].status = TaskStatus.free;
       _schedule[index].title = "Free Slot";
       _schedule[index].location = "Available";
-      _schedule[index].description = null; // Clear old descriptions
+      _schedule[index].description = null;
     });
 
-    // --- NEW: Run the merge logic immediately ---
     _mergeFreeSlots(); 
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -175,24 +160,21 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // --- LOGIC: AI Suggestions ---
   void _openAISuggestions(int index) {
     final task = _schedule[index];
     final duration = _calculateDuration(task.time, task.endTime);
 
     showModalBottomSheet(
       context: context,
-      // ... styling ...
       builder: (context) => _AISuggestionSheet(
         timeSlot: "${task.time} - ${task.endTime}",
         durationMinutes: duration,
-        // RECEIVE THE NEW DATA HERE
         onSelect: (newTitle, newDesc, newUrl, newType) {
           setState(() {
             _schedule[index].title = newTitle;
             _schedule[index].description = newDesc;
-            _schedule[index].resourceUrl = newUrl; // Save Link
-            _schedule[index].resourceType = newType; // Save Type
+            _schedule[index].resourceUrl = newUrl;
+            _schedule[index].resourceType = newType;
             _schedule[index].location = "Self Study";
             _schedule[index].status = TaskStatus.scheduled; 
           });
@@ -226,7 +208,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-  // --- NEW: WHITEBOARD LOGIC ---
   void _openWhiteboard() async {
     final result = await Navigator.push(
       context,
@@ -238,7 +219,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // --- NEW: SMART PARSER FOR WHITEBOARD ---
   void _parseAndAddTask(String rawText) {
     String processingText = rawText.toLowerCase().trim();
     String title = rawText; 
@@ -249,7 +229,6 @@ class _HomeScreenState extends State<HomeScreen> {
     bool dateFound = false;
     bool timeFound = false;
 
-    // Detect Date (12/01, Jan 12, etc.)
     final numericDateRegex = RegExp(r'\b(\d{1,2})\s*[/-]\s*(\d{1,2})\b');
     final numMatch = numericDateRegex.firstMatch(processingText);
 
@@ -286,7 +265,6 @@ class _HomeScreenState extends State<HomeScreen> {
       title = title.replaceAll(RegExp(r'tomorrow', caseSensitive: false), "");
     }
 
-    // Detect Time (5pm, 14:00, etc.)
     final timeRegex = RegExp(r'\b(\d{1,2})\s*(?:[:.]\s*(\d{2}))?\s*(am|pm)?\b');
     final matches = timeRegex.allMatches(processingText);
     
@@ -335,7 +313,7 @@ class _HomeScreenState extends State<HomeScreen> {
         content: Text("Created '$title'${dateFound ? ' on ${targetDate.day}/${targetDate.month}' : ''} at $startStr"), 
         duration: const Duration(seconds: 4),
         action: SnackBarAction(label: "DEBUG", onPressed: (){
-           showDialog(context: context, builder: (_) => AlertDialog(title: const Text("Raw Text Saw:"), content: Text(rawText)));
+          showDialog(context: context, builder: (_) => AlertDialog(title: const Text("Raw Text Saw:"), content: Text(rawText)));
         }),
       ),
     );
@@ -348,9 +326,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        // --- CHANGE IS HERE ---
-        // This sets the default "Leading" icon (Back Arrow) to Gold.
-        // Your action buttons (Sync, Theme) won't change because they have explicit colors below.
         iconTheme: const IconThemeData(color: AppTheme.goldAccent),
         // ----------------------
 
@@ -366,13 +341,10 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         actions: [
-          // This stays 'textColor' (White/Black) because you explicitly set it
           IconButton(
             icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode, color: textColor),
             onPressed: () => themeController.toggleTheme(),
           ),
-          
-          // --- UPDATED POPUP MENU (With Whiteboard) ---
           PopupMenuButton<String>(
             icon: _isSyncing 
                 ? const SizedBox(
@@ -386,7 +358,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 _syncCalendar();
               } else if (value == 'excel') {
                 _importExcel();
-              } else if (value == 'whiteboard') { // Added Whiteboard Check
+              } else if (value == 'whiteboard') {
                 _openWhiteboard();
               }
             },
@@ -412,7 +384,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const PopupMenuDivider(),
-              // --- WHITEBOARD ITEM ---
               const PopupMenuItem<String>(
                 value: 'whiteboard',
                 child: Row(
@@ -430,7 +401,6 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: Column(
         children: [
-          // ... (Rest of your body code remains exactly the same)
           TableCalendar(
             firstDay: DateTime.utc(2024, 1, 1),
             lastDay: DateTime.utc(2030, 12, 31),
@@ -482,7 +452,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // --- WIDGET: Standard Task Card with 3-Dots ---
   Widget _buildTaskCard(ScheduleTask task, int index, bool isDark, Color textColor) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -495,7 +464,6 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       child: Row(
         children: [
-          // Time Column
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -507,7 +475,6 @@ class _HomeScreenState extends State<HomeScreen> {
           Container(height: 40, width: 2, color: AppTheme.goldAccent.withOpacity(0.2)),
           const SizedBox(width: 20),
           
-          // Details Column
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -515,7 +482,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 Text(task.title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textColor)),
                 Text(task.location, style: TextStyle(fontSize: 14, color: textColor.withOpacity(0.6))),
                 
-                // Description
                 if (task.description != null) 
                   Padding(
                     padding: const EdgeInsets.only(top: 4.0),
@@ -527,13 +493,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
 
-                // --- NEW CODE STARTS HERE ---
-                // If this task has a link attached, show the "Open" button
                 if (task.resourceUrl != null)
                   Padding(
                     padding: const EdgeInsets.only(top: 8.0),
                     child: InkWell(
-                      onTap: () => _launchURL(task.resourceUrl!), // Opens the link
+                      onTap: () => _launchURL(task.resourceUrl!),
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                         decoration: BoxDecoration(
@@ -542,10 +506,10 @@ class _HomeScreenState extends State<HomeScreen> {
                           border: Border.all(color: AppTheme.goldAccent.withOpacity(0.3)),
                         ),
                         child: Row(
-                          mainAxisSize: MainAxisSize.min, // shrink to fit text
+                          mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
-                              _getIconForType(task.resourceType ?? 'Link'), // Uses helper for correct icon
+                              _getIconForType(task.resourceType ?? 'Link'),
                               size: 14, 
                               color: AppTheme.goldAccent
                             ),
@@ -563,12 +527,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                   ),
-                // --- NEW CODE ENDS HERE ---
+                
               ],
             ),
           ),
           
-          // 3 Dots Menu
           PopupMenuButton<String>(
             icon: Icon(Icons.more_vert, color: textColor.withOpacity(0.5)),
             onSelected: (value) {
@@ -592,7 +555,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // --- WIDGET: Free Slot Card with AI Button ---
   Widget _buildFreeSlotCard(ScheduleTask task, int index) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
@@ -623,7 +585,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ],
               ),
-              // AI Button
               ElevatedButton.icon(
                 onPressed: () => _openAISuggestions(index),
                 icon: const Icon(Icons.psychology, size: 16, color: Colors.white),
@@ -649,10 +610,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-// --- 3. AI SUGGESTION SHEET ---
 class _AISuggestionSheet extends StatefulWidget {
   final String timeSlot;
-  final int durationMinutes; // We need this to filter tasks
+  final int durationMinutes;
   final Function(String title, String desc, String url, String type) onSelect;
 
   const _AISuggestionSheet({
@@ -676,7 +636,6 @@ class _AISuggestionSheetState extends State<_AISuggestionSheet> {
   }
 
 
-// --- HELPER: Pick icon based on resource type ---
   IconData _getIconForType(String type) {
     switch (type) {
       case 'Video': return Icons.play_circle_outline;
@@ -688,7 +647,6 @@ class _AISuggestionSheetState extends State<_AISuggestionSheet> {
     }
   }
 
-  // --- HELPER: Build the colored tags ---
   Widget _buildTag(String text, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -704,7 +662,6 @@ class _AISuggestionSheetState extends State<_AISuggestionSheet> {
     );
   }
 
-  // --- HELPER: Open the link ---
   Future<void> _launchURL(String urlString) async {
     try {
       final Uri url = Uri.parse(urlString);
@@ -718,7 +675,7 @@ class _AISuggestionSheetState extends State<_AISuggestionSheet> {
       );
     }
   }
-//Confirmation dialog box
+
 void _showConfirmationDialog(ActivitySuggestion item) {
     showDialog(
       context: context,
@@ -748,7 +705,6 @@ void _showConfirmationDialog(ActivitySuggestion item) {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 1. VISUAL TAGS
               Row(
                 children: [
                   _buildTag("${item.minDuration} min", Colors.blue),
@@ -758,7 +714,6 @@ void _showConfirmationDialog(ActivitySuggestion item) {
               ),
               const SizedBox(height: 16),
               
-              // 2. FULL DESCRIPTION (No truncation)
               Text(
                 item.description,
                 style: TextStyle(fontSize: 14, height: 1.5, color: isDark ? Colors.white70 : Colors.black87),
@@ -766,7 +721,6 @@ void _showConfirmationDialog(ActivitySuggestion item) {
               
               const SizedBox(height: 20),
               
-              // 3. RESOURCE LINK (Optional Preview)
               InkWell(
                 onTap: () => _launchURL(item.resourceUrl),
                 borderRadius: BorderRadius.circular(12),
@@ -794,16 +748,13 @@ void _showConfirmationDialog(ActivitySuggestion item) {
             ],
           ),
           actions: [
-            // CANCEL BUTTON
             TextButton(
               onPressed: () => Navigator.pop(context),
               child: Text("Cancel", style: TextStyle(color: isDark ? Colors.grey : Colors.grey[700])),
             ),
-            // CONFIRM BUTTON
             ElevatedButton(
               onPressed: () {
                   Navigator.pop(context);
-                  // PASS ALL 4 VALUES NOW
                   widget.onSelect(
                     item.title, 
                     item.description, 
@@ -837,27 +788,20 @@ void _showConfirmationDialog(ActivitySuggestion item) {
           .maybeSingle();
 
       if (data != null && data['interests'] != null) {
-        // Convert the dynamic list to a clean String list
         userInterests = List<String>.from(data['interests']);
       }
     }
 
-    // --- DEBUG: Print what matches found ---
     print("🔎 User Interests Found: $userInterests");
 
-    // THE FIX: Strict Filtering
     final validTasks = taskLibrary.where((task) {
-      // Rule 1: Must fit in time
       final fitsTime = task.minDuration <= widget.durationMinutes;
       
-      // Rule 2: STRICT MATCH ONLY (Removed the '|| Wellness' part)
-      // The task category must be inside your selected list.
       final isInteresting = userInterests.contains(task.category);
 
       return fitsTime && isInteresting;
     }).toList();
 
-    // Shuffle and pick top 3
     validTasks.shuffle();
     
     if (mounted) {
@@ -938,7 +882,6 @@ void _showConfirmationDialog(ActivitySuggestion item) {
           side: BorderSide(color: isDark ? Colors.transparent : Colors.grey.shade200),
         ),
         child: ListTile(
-          // 1. DYNAMIC ICON (Based on Video, Practice, etc.)
           leading: CircleAvatar(
             backgroundColor: AppTheme.goldAccent.withOpacity(0.1),
             child: Icon(
@@ -948,19 +891,17 @@ void _showConfirmationDialog(ActivitySuggestion item) {
             ),
           ),
           
-          // 2. TITLE
           title: Text(
             item.title, 
             style: TextStyle(fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black)
           ),
           
-          // 3. SUBTITLE with Description + Visual Tags
           subtitle: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                   item.description, 
-                  maxLines: 2, // <--- Change from 1 to 2
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis, 
                   style: TextStyle(fontSize: 12, color: isDark ? Colors.white70 : Colors.black54)
                   ),
@@ -975,14 +916,12 @@ void _showConfirmationDialog(ActivitySuggestion item) {
             ],
           ),
           
-          // 4. LAUNCH BUTTON (Opens URL)
           trailing: IconButton(
             icon: const Icon(Icons.open_in_new, color: AppTheme.goldAccent),
             tooltip: "Open Resource",
             onPressed: () => _launchURL(item.resourceUrl),
           ),
           
-          // 5. PLAN BUTTON (Adds to Schedule)
           onTap: () => _showConfirmationDialog(item),
         ),
       );

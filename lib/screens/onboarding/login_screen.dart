@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/theme.dart';
-import '../../screens/main_layout.dart'; // Ensure this path is correct
+import '../../screens/main_layout.dart';
 import '../onboarding/interest_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -19,7 +19,6 @@ class _LoginScreenState extends State<LoginScreen> {
   bool isStudent = true; 
   bool _isLoading = false;
 
-  // --- AUTH LOGIC ---
   Future<void> _submit() async {
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
@@ -33,7 +32,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       if (_isLogin) {
-        // --- 1. LOGIN ---
         final AuthResponse res = await Supabase.instance.client.auth.signInWithPassword(
           email: email,
           password: password,
@@ -43,7 +41,6 @@ class _LoginScreenState extends State<LoginScreen> {
           await _checkInterestsAndNavigate(res.user!.id);
         }
       } else {
-        // --- 2. SIGN UP ---
         final AuthResponse response = await Supabase.instance.client.auth.signUp(
           email: email,
           password: password,
@@ -56,7 +53,6 @@ class _LoginScreenState extends State<LoginScreen> {
             return;
           }
 
-          // Create Profile
           await Supabase.instance.client.from('profiles').upsert({
             'id': response.user!.id,
             'email': email,
@@ -125,13 +121,10 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // --- UI CODE ---
   @override
   Widget build(BuildContext context) {
-    // 1. Theme Awareness Logic
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
-    // Define dynamic colors
     final Color textColor = isDark ? Colors.white : AppTheme.darkBlue;
     final Color subTextColor = isDark ? Colors.grey[400]! : Colors.grey[600]!;
     final Color containerBg = isDark ? const Color(0xFF2C2C2C) : Colors.grey[200]!;
@@ -139,7 +132,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final Color inputBorderColor = isDark ? Colors.grey[700]! : Colors.grey;
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor, // Auto adapts
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
@@ -153,7 +146,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   _isLogin ? "Welcome Back," : "Create Account,",
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: AppTheme.goldAccent, // Keeping Gold constant
+                        color: AppTheme.goldAccent,
                       ),
                 ),
                 const SizedBox(height: 8),
@@ -167,7 +160,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 40),
 
-                // Role Toggle (Student / Teacher)
                 Container(
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
@@ -183,7 +175,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 30),
 
-                // Inputs
                 _buildTextField(
                   controller: _emailController,
                   label: "Email Address",
@@ -206,7 +197,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 40),
 
-                // Action Button
                 SizedBox(
                   width: double.infinity,
                   height: 50,
@@ -228,7 +218,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 
                 const SizedBox(height: 20),
 
-                // Mode Switch Link
                 Center(
                   child: GestureDetector(
                     onTap: () {
@@ -261,7 +250,6 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // Helper for consistent TextFields across themes
   Widget _buildTextField({
     required TextEditingController controller,
     required String label,
@@ -294,11 +282,9 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // Helper for Role Buttons
   Widget _buildRoleButton(String text, bool value, bool isDark) {
     bool isSelected = isStudent == value;
     
-    // Determine button colors based on selection and theme
     Color activeBg = isDark ? Colors.grey[800]! : Colors.white;
     Color activeText = isDark ? AppTheme.goldAccent : AppTheme.primaryBlue;
     Color inactiveText = isDark ? Colors.grey[400]! : Colors.grey;

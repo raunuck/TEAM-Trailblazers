@@ -37,7 +37,6 @@ class _WhiteboardScreenState extends State<WhiteboardScreen> {
     super.dispose();
   }
 
-  // DRAWING LOGIC
   void _startStroke(DragStartDetails details) {
     final point = DrawPoint(details.localPosition, DateTime.now().millisecondsSinceEpoch);
     setState(() {
@@ -68,7 +67,6 @@ class _WhiteboardScreenState extends State<WhiteboardScreen> {
   Future<void> _performRecognition() async {
     if (_strokes.isEmpty) return;
 
-    // Convert to ML Kit format
     List<ml_kit.Stroke> mlStrokes = [];
     
     for (var stroke in _strokes) {
@@ -88,7 +86,6 @@ class _WhiteboardScreenState extends State<WhiteboardScreen> {
     
     if (mounted) {
       setState(() {
-        // If result is empty, keep "..."
         _recognizedText = result.isEmpty ? "..." : result;
       });
     }
@@ -123,7 +120,6 @@ class _WhiteboardScreenState extends State<WhiteboardScreen> {
       ),
       body: Column(
         children: [
-          // 1. MODEL STATUS BAR
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 4),
@@ -139,7 +135,6 @@ class _WhiteboardScreenState extends State<WhiteboardScreen> {
             ),
           ),
 
-          // 2. CANVAS
           Expanded(
             child: Container(
               margin: const EdgeInsets.all(16),
@@ -163,21 +158,18 @@ class _WhiteboardScreenState extends State<WhiteboardScreen> {
             ),
           ),
 
-          // 3. RECOGNITION BOX
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
               color: isDark ? const Color(0xFF2C2C2C) : Colors.white,
               borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-              // --- CRITICAL FIX IS HERE ---
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.1), 
-                  blurRadius: 10, // Must be positive!
+                  blurRadius: 10,
                   offset: const Offset(0, -4)
                 )
               ],
-              // ----------------------------
             ),
             child: Column(
               children: [

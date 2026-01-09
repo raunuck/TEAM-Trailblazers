@@ -13,13 +13,12 @@ class CreateEventScreen extends StatefulWidget {
 class _CreateEventScreenState extends State<CreateEventScreen> {
   final _titleController = TextEditingController();
   final _locationController = TextEditingController();
-  final _tagController = TextEditingController(); // Simple comma-separated tags
+  final _tagController = TextEditingController();
   
   DateTime _selectedDate = DateTime.now().add(const Duration(hours: 1));
   TimeOfDay _selectedTime = TimeOfDay.now();
   bool _isSaving = false;
 
-  // --- LOGIC: Pick Date & Time ---
   Future<void> _pickDateTime() async {
     final date = await showDatePicker(
       context: context,
@@ -51,7 +50,6 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     });
   }
 
-  // --- LOGIC: Save to Supabase ---
   Future<void> _postEvent() async {
     if (_titleController.text.isEmpty || _locationController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Title and Location are required")));
@@ -64,7 +62,6 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
       final user = Supabase.instance.client.auth.currentUser;
       if (user == null) throw Exception("Not logged in");
 
-      // Process Tags (split by comma)
       final List<String> tags = _tagController.text
           .split(',')
           .map((e) => e.trim())
@@ -84,7 +81,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
         'location': _locationController.text.trim(),
         'event_time': fullDateTime.toIso8601String(),
         'tags': tags,
-        'participants': [user.id], // Creator joins automatically
+        'participants': [user.id],
       });
 
       if (mounted) Navigator.pop(context);
@@ -140,7 +137,6 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
             _buildInput("TAGS (Comma separated)", "Tech, Study, Social", _tagController, textColor, isDark),
             const SizedBox(height: 30),
             
-            // Date Picker
             InkWell(
               onTap: _pickDateTime,
               borderRadius: BorderRadius.circular(12),

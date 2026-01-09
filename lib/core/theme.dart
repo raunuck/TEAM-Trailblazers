@@ -1,18 +1,15 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
-  // --- CORE PALETTE ---
   static const Color darkBlue = Color(0xFF131635);
   static const Color goldAccent = Color(0xFFCCA35E);
   static const Color cardCreamBg = Color(0xFFFDF6E3);
   static const Color innerBlockBg = Color(0xFFFCEFD0);
   
-  // --- COMPATIBILITY CONSTANTS ---
   static const Color textDarkBlue = Color(0xFF131635);
   static const Color primaryBlue = darkBlue;
   static const Color background = Color(0xFFF5F5F5);
 
-  // --- LIGHT THEME ---
   static final ThemeData lightTheme = ThemeData(
     brightness: Brightness.light,
     primaryColor: darkBlue,
@@ -30,7 +27,6 @@ class AppTheme {
     useMaterial3: true,
   );
 
-  // --- DARK THEME ---
   static final ThemeData darkTheme = ThemeData(
     brightness: Brightness.dark,
     primaryColor: darkBlue,

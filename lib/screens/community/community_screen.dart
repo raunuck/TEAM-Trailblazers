@@ -12,13 +12,11 @@ class CommunityScreen extends StatefulWidget {
 }
 
 class _CommunityScreenState extends State<CommunityScreen> {
-  // Stream to listen for real-time updates
   final _eventStream = Supabase.instance.client
       .from('community_events')
       .stream(primaryKey: ['id'])
       .order('event_time', ascending: true);
 
-  // --- LOGIC: Join / Leave ---
   Future<void> _toggleJoin(String eventId, List<dynamic> currentParticipants) async {
     final userId = Supabase.instance.client.auth.currentUser?.id;
     if (userId == null) return;
@@ -27,9 +25,9 @@ class _CommunityScreenState extends State<CommunityScreen> {
     final isJoined = participants.contains(userId);
 
     if (isJoined) {
-      participants.remove(userId); // Leave
+      participants.remove(userId);
     } else {
-      participants.add(userId); // Join
+      participants.add(userId);
     }
 
     try {
@@ -113,12 +111,10 @@ class _CommunityScreenState extends State<CommunityScreen> {
     required Map<String, dynamic> event,
     required bool isDark,
   }) {
-    // Colors
     final cardBg = isDark ? const Color(0xFF1C234C) : Colors.white;
     final textColor = isDark ? Colors.white : AppTheme.darkBlue;
     final subTextColor = isDark ? Colors.grey[400] : Colors.grey[600];
 
-    // Data Parsing
     final userId = Supabase.instance.client.auth.currentUser?.id;
     final participants = List<dynamic>.from(event['participants'] ?? []);
     final isJoined = participants.contains(userId);
@@ -140,7 +136,6 @@ class _CommunityScreenState extends State<CommunityScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Tags
               Row(
                 children: tags.take(3).map((t) => Container(
                   margin: const EdgeInsets.only(right: 8),
@@ -152,7 +147,6 @@ class _CommunityScreenState extends State<CommunityScreen> {
                   child: Text(t, style: const TextStyle(fontSize: 10, color: AppTheme.goldAccent, fontWeight: FontWeight.bold)),
                 )).toList(),
               ),
-              // Time Left Logic (Simple)
               Text(
                 DateFormat('h:mm a').format(date), 
                 style: TextStyle(color: Colors.orange.shade700, fontWeight: FontWeight.bold, fontSize: 12)

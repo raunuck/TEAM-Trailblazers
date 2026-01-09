@@ -6,8 +6,6 @@ import 'package:intl/intl.dart';
 import '../screens/dashboard/home_screen.dart'; 
 
 class CalendarService {
-  // --- MISSING VARIABLE FIX ---
-  // This was missing in your previous file
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: [cal.CalendarApi.calendarEventsReadonlyScope],
   );
@@ -16,10 +14,8 @@ class CalendarService {
     try {
       print("DEBUG: Starting Sign In Flow...");
 
-      // 1. Silent Sign In (Try to log in without popup first)
       GoogleSignInAccount? googleUser = await _googleSignIn.signInSilently();
       
-      // 2. If silent fails, trigger the popup
       if (googleUser == null) {
         print("DEBUG: Silent sign-in failed, attempting interactive sign-in...");
         googleUser = await _googleSignIn.signIn();
@@ -40,7 +36,6 @@ class CalendarService {
 
       final calendarApi = cal.CalendarApi(httpClient);
 
-      // Define Range (Midnight to Midnight of selected date)
       final startOfDay = DateTime(date.year, date.month, date.day).toUtc();
       final endOfDay = DateTime(date.year, date.month, date.day, 23, 59).toUtc();
 
@@ -56,7 +51,6 @@ class CalendarService {
 
       return _parseAndAdaptiveGapLogic(events.items ?? []);
     } catch (e, stackTrace) {
-      // THIS WILL SHOW THE REAL ERROR IN YOUR CONSOLE
       print("CRITICAL CALENDAR ERROR: $e");
       print("STACK TRACE: $stackTrace");
       return null;
@@ -67,7 +61,6 @@ class CalendarService {
     List<ScheduleTask> appSchedule = [];
     final timeFormat = DateFormat("HH:mm");
 
-    // 1. Convert Google Events to ScheduleTasks
     for (var event in googleEvents) {
       if (event.start?.dateTime == null || event.end?.dateTime == null) continue;
 
@@ -84,7 +77,6 @@ class CalendarService {
       ));
     }
 
-    // 2. Adaptive Gap Logic (Insert Free Slots)
     if (appSchedule.isEmpty) return [];
     
     List<ScheduleTask> finalSchedule = [];
@@ -93,13 +85,11 @@ class CalendarService {
       finalSchedule.add(appSchedule[i]);
 
       if (i < appSchedule.length - 1) {
-        // Parse back the times to calculate difference
         DateTime currentEnd = _parseTime(appSchedule[i].endTime);
         DateTime nextStart = _parseTime(appSchedule[i + 1].time);
         
         int gapMinutes = nextStart.difference(currentEnd).inMinutes;
 
-        // If gap is significant (e.g., > 15 mins), insert a Free Slot
         if (gapMinutes >= 15) {
           finalSchedule.add(ScheduleTask(
             id: "gap_$i",
@@ -115,7 +105,6 @@ class CalendarService {
     return finalSchedule;
   }
 
-  // Helper to parse HH:mm back to DateTime for calculation
   DateTime _parseTime(String timeStr) {
     final now = DateTime.now();
     final parts = timeStr.split(":");

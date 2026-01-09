@@ -3,7 +3,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class SupabaseService {
   final SupabaseClient _client = Supabase.instance.client;
 
-  // We will add functions here
   Future<List<Map<String, dynamic>>> fetchTasks() async {
   final response = await _client
       .from('tasks')

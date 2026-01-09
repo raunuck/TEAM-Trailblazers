@@ -4,9 +4,9 @@ class ActivitySuggestion {
   final String description;
   final String category;
   final int minDuration;
-  final String type; // "Productive" or "Rest"
+  final String type;
   final String resourceUrl;
-  final String resourceType; // "Video", "Practice", "Article", "Audio"
+  final String resourceType;
 
   ActivitySuggestion({
     required this.id,
@@ -20,9 +20,7 @@ class ActivitySuggestion {
   });
 }
 
-// --- THE COMPLETE KNOWLEDGE BASE ---
 final List<ActivitySuggestion> taskLibrary = [
-  // ================== 1. CODING ==================
   ActivitySuggestion(
     id: 'c1',
     title: 'Two Sum (LeetCode)',
@@ -60,11 +58,10 @@ final List<ActivitySuggestion> taskLibrary = [
     category: 'Coding',
     minDuration: 45,
     type: 'Productive',
-    resourceUrl: 'https://github.com/', // Deep link to their repo ideally
+    resourceUrl: 'https://github.com/',
     resourceType: 'Practice',
   ),
 
-  // ================== 2. DESIGN ==================
   ActivitySuggestion(
     id: 'd1',
     title: 'Figma Auto-Layout',
@@ -96,7 +93,6 @@ final List<ActivitySuggestion> taskLibrary = [
     resourceType: 'Video',
   ),
 
-  // ================== 3. PUBLIC SPEAKING ==================
   ActivitySuggestion(
     id: 'ps1',
     title: 'Vocal Warmups',
@@ -128,7 +124,6 @@ final List<ActivitySuggestion> taskLibrary = [
     resourceType: 'Practice',
   ),
 
-  // ================== 4. WRITING ==================
   ActivitySuggestion(
     id: 'wr1',
     title: 'The Morning Pages',
@@ -160,7 +155,6 @@ final List<ActivitySuggestion> taskLibrary = [
     resourceType: 'Practice',
   ),
 
-  // ================== 5. MARKETING ==================
   ActivitySuggestion(
     id: 'm1',
     title: 'SEO Keyword Research',
@@ -192,7 +186,6 @@ final List<ActivitySuggestion> taskLibrary = [
     resourceType: 'Practice',
   ),
 
-  // ================== 6. FINANCE ==================
   ActivitySuggestion(
     id: 'f1',
     title: 'Expense Audit',
@@ -200,7 +193,7 @@ final List<ActivitySuggestion> taskLibrary = [
     category: 'Finance',
     minDuration: 15,
     type: 'Productive',
-    resourceUrl: 'https://mint.intuit.com/', // Or just generic
+    resourceUrl: 'https://mint.intuit.com/',
     resourceType: 'Practice',
   ),
   ActivitySuggestion(
@@ -214,7 +207,6 @@ final List<ActivitySuggestion> taskLibrary = [
     resourceType: 'Article',
   ),
 
-  // ================== 7. PHOTOGRAPHY ==================
   ActivitySuggestion(
     id: 'ph1',
     title: 'Rule of Thirds Drill',
@@ -236,7 +228,6 @@ final List<ActivitySuggestion> taskLibrary = [
     resourceType: 'Practice',
   ),
 
-  // ================== 8. WELLNESS ==================
   ActivitySuggestion(
     id: 'w1',
     title: 'NSDR Protocol',
@@ -268,7 +259,6 @@ final List<ActivitySuggestion> taskLibrary = [
     resourceType: 'Video',
   ),
 
-  // ================== 9. AI TOOLS ==================
   ActivitySuggestion(
     id: 'ai1',
     title: 'Prompt Engineering',

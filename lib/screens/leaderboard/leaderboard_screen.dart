@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
 
-// --- 1. Model for Dummy Data ---
 class LeaderboardEntry {
   final String name;
   final int rank;
   final int points;
   final int tasksCompleted;
-  final String department; // e.g., CSE, ECE
+  final String department;
 
   const LeaderboardEntry({
     required this.name,
@@ -18,7 +17,6 @@ class LeaderboardEntry {
   });
 }
 
-// --- 2. Dummy Data (Students completing tasks) ---
 final List<LeaderboardEntry> _leaderboardData = [
   const LeaderboardEntry(name: "Priya Sharma", rank: 1, points: 2450, tasksCompleted: 42, department: "CSE"),
   const LeaderboardEntry(name: "Rahul Verma", rank: 2, points: 2300, tasksCompleted: 38, department: "ECE"),
@@ -41,8 +39,7 @@ class LeaderboardScreen extends StatelessWidget {
     final textColor = isDark ? Colors.white : AppTheme.darkBlue;
     final bgColor = Theme.of(context).scaffoldBackgroundColor;
 
-    // Split data into Top 3 and Rest
-    // We expect at least 3 users for the podium to work perfectly
+    
     final topThree = _leaderboardData.take(3).toList();
     final restOfTheList = _leaderboardData.skip(3).toList();
 
@@ -60,26 +57,21 @@ class LeaderboardScreen extends StatelessWidget {
       ),
       body: Column(
         children: [
-          // --- TOP 3 PODIUM SECTION ---
           Container(
             padding: const EdgeInsets.fromLTRB(16, 10, 16, 30),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.end, // Align bottom
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                // Rank 2 (Left)
                 _buildPodiumPosition(context, topThree[1], 140, Colors.grey.shade400),
                 
-                // Rank 1 (Center - Biggest)
                 _buildPodiumPosition(context, topThree[0], 170, Colors.amber),
                 
-                // Rank 3 (Right)
                 _buildPodiumPosition(context, topThree[2], 120, Colors.brown.shade300),
               ],
             ),
           ),
 
-          // --- THE REST OF THE LIST ---
           Expanded(
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -106,7 +98,6 @@ class LeaderboardScreen extends StatelessWidget {
     );
   }
 
-  // Helper: Build one pillar of the podium
   Widget _buildPodiumPosition(BuildContext context, LeaderboardEntry entry, double height, Color color) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : AppTheme.darkBlue;
@@ -115,7 +106,6 @@ class LeaderboardScreen extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          // Avatar
           CircleAvatar(
             radius: 24,
             backgroundColor: color.withOpacity(0.2),
@@ -126,9 +116,8 @@ class LeaderboardScreen extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           
-          // Name and Points
           Text(
-            entry.name.split(" ")[0], // First name only
+            entry.name.split(" ")[0],
             style: TextStyle(fontWeight: FontWeight.bold, color: textColor, fontSize: 13),
             overflow: TextOverflow.ellipsis,
           ),
@@ -138,7 +127,6 @@ class LeaderboardScreen extends StatelessWidget {
           ),
           const SizedBox(height: 8),
 
-          // The Pillar
           Container(
             height: height,
             width: double.infinity,
@@ -164,7 +152,6 @@ class LeaderboardScreen extends StatelessWidget {
     );
   }
 
-  // Helper: Build a standard list row
   Widget _buildListItem(BuildContext context, LeaderboardEntry entry, bool isDark) {
     final textColor = isDark ? Colors.white : AppTheme.darkBlue;
     
@@ -172,7 +159,6 @@ class LeaderboardScreen extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Row(
         children: [
-          // Rank Number
           SizedBox(
             width: 40,
             child: Text(
@@ -182,14 +168,12 @@ class LeaderboardScreen extends StatelessWidget {
             ),
           ),
           
-          // Avatar
           CircleAvatar(
             backgroundColor: Colors.blue.shade50,
             child: Text(entry.name[0], style: const TextStyle(color: Colors.blue)),
           ),
           const SizedBox(width: 16),
           
-          // Name & Details
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -206,7 +190,6 @@ class LeaderboardScreen extends StatelessWidget {
             ),
           ),
           
-          // Points Pill
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(

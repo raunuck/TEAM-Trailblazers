@@ -14,15 +14,12 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   
-  // Toggle: Are we Logging In or Signing Up?
   bool _isLogin = true; 
   
-  // Toggle: Student vs Teacher
   bool isStudent = true; 
   
   bool _isLoading = false;
 
-  // --- AUTH LOGIC ---
   Future<void> _submit() async {
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
@@ -36,28 +33,23 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       if (_isLogin) {
-        // --- 1. LOGIN MODE ---
         await Supabase.instance.client.auth.signInWithPassword(
           email: email,
           password: password,
         );
       } else {
-        // --- 2. SIGN UP MODE ---
         final AuthResponse response = await Supabase.instance.client.auth.signUp(
           email: email,
           password: password,
         );
 
-        // DATABASE FIX: Save the user's role immediately
         if (response.user != null) {
-          // Check if session is null (Means Email Verification is ON in Supabase)
           if (response.session == null) {
             _showSnackBar("Please check your email to confirm your account.", Colors.blue);
             setState(() => _isLoading = false);
             return;
           }
 
-          // Save to 'profiles' table using UPSERT (Safe Insert)
           await Supabase.instance.client.from('profiles').upsert({
             'id': response.user!.id,
             'email': email,
@@ -69,7 +61,6 @@ class _LoginScreenState extends State<LoginScreen> {
         }
       }
 
-      // Success! Navigate to next screen
       if (mounted) {
         Navigator.pushReplacement(
           context,
@@ -94,7 +85,6 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // --- UI CODE ---
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -107,7 +97,6 @@ class _LoginScreenState extends State<LoginScreen> {
               children: [
                 const SizedBox(height: 50),
                 
-                // 1. Dynamic Header
                 Text(
                   _isLogin ? "Welcome Back," : "Create Account,",
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
@@ -126,7 +115,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 40),
 
-                // 2. Role Toggle (Visible in both modes for clarity)
                 Container(
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
@@ -142,7 +130,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 30),
 
-                // 3. Inputs
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
@@ -164,7 +151,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 40),
 
-                // 4. Main Action Button
                 SizedBox(
                   width: double.infinity,
                   height: 50,
@@ -186,12 +172,11 @@ class _LoginScreenState extends State<LoginScreen> {
                 
                 const SizedBox(height: 20),
 
-                // 5. Toggle Mode Link
                 Center(
                   child: GestureDetector(
                     onTap: () {
                       setState(() {
-                        _isLogin = !_isLogin; // Switch modes
+                        _isLogin = !_isLogin;
                       });
                     },
                     child: RichText(

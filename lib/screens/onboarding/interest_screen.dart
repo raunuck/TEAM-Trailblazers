@@ -20,7 +20,7 @@ class _InterestScreenState extends State<InterestScreen> {
   ];
 
   final Set<String> _selected = {};
-  bool _isSaving = false; // To show loading spinner
+  bool _isSaving = false;
 
   Future<void> _saveAndContinue() async {
     if (_selected.isEmpty) {
@@ -35,9 +35,6 @@ class _InterestScreenState extends State<InterestScreen> {
     try {
       final user = Supabase.instance.client.auth.currentUser;
       if (user != null) {
-        // --- SAVE TO DATABASE ---
-        // This updates the user's profile with their selected interests
-        // Note: You need to run the SQL command below for this to work!
         await Supabase.instance.client.from('profiles').update({
           'interests': _selected.toList(),
         }).eq('id', user.id);
@@ -51,7 +48,6 @@ class _InterestScreenState extends State<InterestScreen> {
         );
       }
     } catch (e) {
-      // Even if saving fails, we let them in (Offline Mode fallback)
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Note: Could not save interests online ($e)")),
@@ -81,7 +77,6 @@ class _InterestScreenState extends State<InterestScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Dynamic Title based on Role
             Text(
               widget.isStudent 
                   ? "What do you want to learn?" 
@@ -100,7 +95,6 @@ class _InterestScreenState extends State<InterestScreen> {
             ),
             const SizedBox(height: 32),
 
-            // The Grid of Interests
             Expanded(
               child: GridView.builder(
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -159,10 +153,9 @@ class _InterestScreenState extends State<InterestScreen> {
             
             const SizedBox(height: 16),
 
-            // "Continue" Button
             SizedBox(
               width: double.infinity,
-              height: 56, // Fixed height for consistency
+              height: 56, 
               child: ElevatedButton(
                 onPressed: _isSaving ? null : _saveAndContinue,
                 style: ElevatedButton.styleFrom(

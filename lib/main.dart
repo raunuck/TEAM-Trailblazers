@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'core/theme.dart';
-import 'core/theme_controller.dart'; // <--- Import the new controller
+import 'core/theme_controller.dart';
 import 'screens/login_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'screens/vault/vault_screen.dart';
@@ -15,7 +15,6 @@ Future<void> main() async {
     anonKey: 'sb_publishable_NEgKaz6XBa3evK7AQjAUEQ_apXKv_k_',
   );
 
-  // --- NEW: Sign in anonymously if not already logged in ---
   final session = Supabase.instance.client.auth.currentSession;
   if (session == null) {
     try {
@@ -25,7 +24,6 @@ Future<void> main() async {
       debugPrint("Error logging in: $e");
     }
   }
-  // ---------------------------------------------------------
 
   runApp(const MyApp());
 }
@@ -41,7 +39,6 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    // Listen to the controller. When it changes, rebuild the app.
     themeController.addListener(() {
       setState(() {});
     });
@@ -55,7 +52,6 @@ class _MyAppState extends State<MyApp> {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       
-      // CRITICAL CHANGE: Use the controller's value instead of just 'system'
       themeMode: themeController.themeMode, 
       
       home: const WelcomeScreen(),
