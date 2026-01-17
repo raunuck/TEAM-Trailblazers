@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../core/theme.dart';
 import 'home_screen.dart'; // Needed to access ScheduleTask model
+import '../../models/schedule_task.dart';
 
 class ProfileScreen extends StatefulWidget {
   final List<ScheduleTask> tasks;
