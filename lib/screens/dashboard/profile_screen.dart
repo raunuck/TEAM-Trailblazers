@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../core/theme.dart';
-import '../../models/schedule_task.dart'; // <--- IMPORTING THE NEW MODEL
+import '../../models/schedule_task.dart'; // <--- CRITICAL IMPORT
 
 class ProfileScreen extends StatefulWidget {
-  final List<ScheduleTask> tasks; // Using the shared model
+  final List<ScheduleTask> tasks; 
 
   const ProfileScreen({super.key, required this.tasks});
 
@@ -34,6 +34,156 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Map<String, String> _calculateStats() {
     int total = 0;
     int completed = 0;
+    int studyMinutes = 0;
+
+    for (var task in widget.tasks) {
+      if (task.status == TaskStatus.scheduled) {
+        total++;
+        
+        // Safety check for parsing
+        try {
+          final endParts = task.endTime.split(':').map(int.parse).toList();
+          final startParts = task.time.split(':').map(int.parse).toList();
+          final endMinutes = endParts[0] * 60 + endParts[1];
+          final startMinutes = startParts[0] * 60 + startParts[1];
+          int duration = endMinutes - startMinutes;
+
+          if (task.isCompleted) {
+            completed++;
+            studyMinutes += duration;
+          }
+        } catch (e) {
+          debugPrint("Error parsing time for stats: $e");
+        }
+      }
+    }
+
+    double progress = total == 0 ? 0 : (completed / total);
+
+    return {
+      "total": total.toString(),
+      "completed": completed.toString(),
+      "hours": (studyMinutes / 60).toStringAsFixed(1),
+      "progress": progress.toString(),
+    };
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final user = Supabase.instance.client.auth.currentUser;
+    final email = user?.email ?? "Guest User";
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final stats = _calculateStats();
+    final double progressVal = double.parse(stats["progress"]!);
+
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: AppBar(
+        title: const Text("My Profile"),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: AppTheme.goldAccent),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          children: [
+            // PROFILE HEADER
+            Center(
+              child: Column(
+                children: [
+                  Stack(
+                    children: [
+                      GestureDetector(
+                        onTap: _pickImage,
+                        child: CircleAvatar(
+                          radius: 60,
+                          backgroundColor: AppTheme.goldAccent.withOpacity(0.2),
+                          backgroundImage: _profileImage != null ? FileImage(_profileImage!) : null,
+                          child: _profileImage == null
+                              ? Text(email.isNotEmpty ? email[0].toUpperCase() : "G",
+                                  style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold, color: AppTheme.goldAccent))
+                              : null,
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 0, right: 4,
+                        child: GestureDetector(
+                          onTap: _pickImage,
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: const BoxDecoration(color: AppTheme.primaryBlue, shape: BoxShape.circle),
+                            child: const Icon(Icons.camera_alt, color: Colors.white, size: 20),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(email, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: isDark ? Colors.white : AppTheme.darkBlue)),
+                ],
+              ),
+            ),
+            const SizedBox(height: 40),
+            
+            // PROGRESS
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text("Today's Completion", style: TextStyle(fontWeight: FontWeight.bold)),
+                Text("${(progressVal * 100).toInt()}%", style: const TextStyle(color: AppTheme.goldAccent, fontWeight: FontWeight.bold)),
+              ],
+            ),
+            const SizedBox(height: 10),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: LinearProgressIndicator(
+                value: progressVal,
+                minHeight: 10,
+                backgroundColor: isDark ? Colors.grey[800] : Colors.grey[200],
+                color: AppTheme.goldAccent,
+              ),
+            ),
+            const SizedBox(height: 30),
+            
+            // STATS
+            Row(
+              children: [
+                _buildStatCard(context, "Tasks Done", "${stats['completed']}/${stats['total']}", Icons.check_circle, Colors.green),
+                const SizedBox(width: 16),
+                _buildStatCard(context, "Study Hours", "${stats['hours']}h", Icons.timer, Colors.blue),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatCard(BuildContext context, String title, String value, IconData icon, Color color) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          // FIXED SHADOW HERE: blurRadius must be positive
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, color: color, size: 28),
+            const SizedBox(height: 12),
+            Text(value, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black)),
+            Text(title, style: TextStyle(color: isDark ? Colors.white70 : Colors.grey)),
+          ],
+        ),
+      ),
+    );
+  }
+}
     int studyMinutes = 0;
 
     for (var task in widget.tasks) {
