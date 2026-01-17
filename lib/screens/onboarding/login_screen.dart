@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/theme.dart';
-import '../../screens/main_layout.dart';
+import '../../screens/main_layout.dart'; 
 import '../onboarding/interest_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -16,9 +16,10 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   
   bool _isLogin = true; 
-  bool isStudent = true; 
+  // removed: bool isStudent = true; 
   bool _isLoading = false;
 
+  // --- AUTH LOGIC ---
   Future<void> _submit() async {
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
@@ -32,6 +33,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       if (_isLogin) {
+        // --- 1. LOGIN ---
         final AuthResponse res = await Supabase.instance.client.auth.signInWithPassword(
           email: email,
           password: password,
@@ -41,6 +43,7 @@ class _LoginScreenState extends State<LoginScreen> {
           await _checkInterestsAndNavigate(res.user!.id);
         }
       } else {
+        // --- 2. SIGN UP ---
         final AuthResponse response = await Supabase.instance.client.auth.signUp(
           email: email,
           password: password,
@@ -53,10 +56,11 @@ class _LoginScreenState extends State<LoginScreen> {
             return;
           }
 
+          // Create Profile
           await Supabase.instance.client.from('profiles').upsert({
             'id': response.user!.id,
             'email': email,
-            'role': isStudent ? 'Student' : 'Teacher',
+            'role': 'Student', // Defaulting to Student since toggle is removed
             'created_at': DateTime.now().toIso8601String(),
           });
           
@@ -64,7 +68,7 @@ class _LoginScreenState extends State<LoginScreen> {
             _showSnackBar("Account created successfully!", Colors.green);
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => InterestScreen(isStudent: isStudent)),
+              MaterialPageRoute(builder: (context) => const InterestScreen(isStudent: true)),
             );
           }
         }
@@ -102,14 +106,14 @@ class _LoginScreenState extends State<LoginScreen> {
       } else {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => InterestScreen(isStudent: isStudent)),
+          MaterialPageRoute(builder: (context) => const InterestScreen(isStudent: true)),
         );
       }
     } catch (e) {
       if (mounted) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => InterestScreen(isStudent: isStudent)),
+          MaterialPageRoute(builder: (context) => const InterestScreen(isStudent: true)),
         );
       }
     }
@@ -121,18 +125,20 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  // --- UI CODE ---
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
+    // Define dynamic colors
     final Color textColor = isDark ? Colors.white : AppTheme.darkBlue;
     final Color subTextColor = isDark ? Colors.grey[400]! : Colors.grey[600]!;
-    final Color containerBg = isDark ? const Color(0xFF2C2C2C) : Colors.grey[200]!;
+    // removed: final Color containerBg = ...
     final Color inputFillColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
     final Color inputBorderColor = isDark ? Colors.grey[700]! : Colors.grey;
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor, 
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
@@ -146,7 +152,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   _isLogin ? "Welcome Back," : "Create Account,",
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: AppTheme.goldAccent,
+                        color: AppTheme.goldAccent, 
                       ),
                 ),
                 const SizedBox(height: 8),
@@ -160,21 +166,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 40),
 
-                Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: containerBg,
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Row(
-                    children: [
-                      _buildRoleButton("Student", true, isDark),
-                      _buildRoleButton("Teacher", false, isDark),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 30),
+                // Removed Role Toggle Section Here
 
+                // Inputs
                 _buildTextField(
                   controller: _emailController,
                   label: "Email Address",
@@ -197,6 +191,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 40),
 
+                // Action Button
                 SizedBox(
                   width: double.infinity,
                   height: 50,
@@ -218,6 +213,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 
                 const SizedBox(height: 20),
 
+                // Mode Switch Link
                 Center(
                   child: GestureDetector(
                     onTap: () {
@@ -250,6 +246,7 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  // Helper for consistent TextFields across themes
   Widget _buildTextField({
     required TextEditingController controller,
     required String label,
@@ -278,43 +275,6 @@ class _LoginScreenState extends State<LoginScreen> {
           borderSide: BorderSide(color: AppTheme.goldAccent, width: 2),
         ),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(4)),
-      ),
-    );
-  }
-
-  Widget _buildRoleButton(String text, bool value, bool isDark) {
-    bool isSelected = isStudent == value;
-    
-    Color activeBg = isDark ? Colors.grey[800]! : Colors.white;
-    Color activeText = isDark ? AppTheme.goldAccent : AppTheme.primaryBlue;
-    Color inactiveText = isDark ? Colors.grey[400]! : Colors.grey;
-
-    return Expanded(
-      child: GestureDetector(
-        onTap: () {
-          setState(() {
-            isStudent = value;
-          });
-        },
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            color: isSelected ? activeBg : Colors.transparent,
-            borderRadius: BorderRadius.circular(10),
-            boxShadow: isSelected
-                ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))]
-                : [],
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            text,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: isSelected ? activeText : inactiveText,
-            ),
-          ),
-        ),
       ),
     );
   }
