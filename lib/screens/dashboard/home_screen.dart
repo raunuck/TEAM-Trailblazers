@@ -1,3 +1,4 @@
+import 'dart:io'; 
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../../core/theme.dart';
@@ -8,8 +9,9 @@ import '../../models/activity_suggestion.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../services/excel_service.dart';
 import '../../screens/gamification/whiteboard_screen.dart';
-import '../../screens/dashboard/profile_screen.dart';
+import 'package:image_picker/image_picker.dart'; // Ensure you added image_picker to pubspec.yaml
 
+// --- 1. UPDATED MODEL (Added isCompleted) ---
 enum TaskStatus { scheduled, free, cancelled }
 
 class ScheduleTask {
@@ -22,6 +24,7 @@ class ScheduleTask {
   String? description;
   String? resourceUrl;
   String? resourceType;
+  bool isCompleted; // <--- NEW FIELD
 
   ScheduleTask({
     required this.id,
@@ -33,6 +36,7 @@ class ScheduleTask {
     this.description,
     this.resourceUrl,
     this.resourceType,
+    this.isCompleted = false, // Default is NOT done
   });
 }
 
@@ -123,9 +127,7 @@ class _HomeScreenState extends State<HomeScreen> {
       if (current.status == TaskStatus.free && next.status == TaskStatus.free) {
         setState(() {
           current.endTime = next.endTime;
-          
           current.title = "Extended Free Slot";
-          
           _schedule.removeAt(i + 1);
         });
       }
@@ -136,10 +138,8 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final startParts = startStr.split(':').map(int.parse).toList();
       final endParts = endStr.split(':').map(int.parse).toList();
-
       final startMinutes = startParts[0] * 60 + startParts[1];
       final endMinutes = endParts[0] * 60 + endParts[1];
-
       return endMinutes - startMinutes;
     } catch (e) {
       return 30;
@@ -152,6 +152,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _schedule[index].title = "Free Slot";
       _schedule[index].location = "Available";
       _schedule[index].description = null;
+      _schedule[index].isCompleted = false; // Reset completion if cancelled
     });
 
     _mergeFreeSlots(); 
@@ -178,6 +179,7 @@ class _HomeScreenState extends State<HomeScreen> {
             _schedule[index].resourceType = newType;
             _schedule[index].location = "Self Study";
             _schedule[index].status = TaskStatus.scheduled; 
+            _schedule[index].isCompleted = false; // New task starts incomplete
           });
           Navigator.pop(context);
         },
@@ -329,7 +331,6 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         iconTheme: const IconThemeData(color: AppTheme.goldAccent),
         
-        // --- ADDED PROFILE BUTTON HERE ---
         leading: Padding(
           padding: const EdgeInsets.all(8.0),
           child: GestureDetector(
@@ -337,7 +338,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  // Pass the current schedule to the profile page
+                  // 2. PASSING TASKS TO PROFILE SCREEN
                   builder: (context) => ProfileScreen(tasks: _schedule),
                 ),
               );
@@ -348,7 +349,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ),
-        // -------------------------------
 
         title: Text(
           "PlanBEE", 
@@ -473,35 +473,67 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // --- 3. UPDATED TASK CARD (Added Checkbox) ---
   Widget _buildTaskCard(ScheduleTask task, int index, bool isDark, Color textColor) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16), // Reduced padding slightly to fit Checkbox
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1C234C) : Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppTheme.goldAccent.withOpacity(0.3)),
+        border: Border.all(
+          color: task.isCompleted ? Colors.green : AppTheme.goldAccent.withOpacity(0.3),
+          width: task.isCompleted ? 2 : 1
+        ),
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Row(
         children: [
+          // CHECKBOX
+          Checkbox(
+            value: task.isCompleted,
+            activeColor: Colors.green,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+            onChanged: (bool? value) {
+              setState(() {
+                task.isCompleted = value ?? false;
+              });
+            },
+          ),
+          const SizedBox(width: 8),
+
+          // Time Column
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(task.time, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.goldAccent)),
-              Text(task.endTime, style: TextStyle(fontSize: 14, color: textColor.withOpacity(0.5))),
+              Text(task.time, style: TextStyle(
+                fontSize: 16, // Adjusted size
+                fontWeight: FontWeight.bold, 
+                color: task.isCompleted ? Colors.green : AppTheme.goldAccent,
+                decoration: task.isCompleted ? TextDecoration.lineThrough : null,
+              )),
+              Text(task.endTime, style: TextStyle(fontSize: 12, color: textColor.withOpacity(0.5))),
             ],
           ),
-          const SizedBox(width: 20),
-          Container(height: 40, width: 2, color: AppTheme.goldAccent.withOpacity(0.2)),
-          const SizedBox(width: 20),
+          const SizedBox(width: 12),
+          Container(height: 30, width: 2, color: AppTheme.goldAccent.withOpacity(0.2)),
+          const SizedBox(width: 12),
           
+          // Details Column
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(task.title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textColor)),
-                Text(task.location, style: TextStyle(fontSize: 14, color: textColor.withOpacity(0.6))),
+                Text(
+                  task.title, 
+                  style: TextStyle(
+                    fontSize: 16, 
+                    fontWeight: FontWeight.bold, 
+                    color: textColor,
+                    decoration: task.isCompleted ? TextDecoration.lineThrough : null,
+                  )
+                ),
+                Text(task.location, style: TextStyle(fontSize: 12, color: textColor.withOpacity(0.6))),
                 
                 if (task.description != null) 
                   Padding(
@@ -631,6 +663,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
+// ... (Rest of ActivitySuggestion Code, Sheet etc. stays same, omitting to save space) ...
+// NOTE: Make sure to include the _AISuggestionSheet class at the bottom if you copy-paste!
 class _AISuggestionSheet extends StatefulWidget {
   final String timeSlot;
   final int durationMinutes;
