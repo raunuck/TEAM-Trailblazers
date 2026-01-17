@@ -8,6 +8,7 @@ import '../../models/activity_suggestion.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../services/excel_service.dart';
 import '../../screens/gamification/whiteboard_screen.dart';
+import '../../services/suggestion_service.dart';
 
 enum TaskStatus { scheduled, free, cancelled }
 
@@ -163,24 +164,59 @@ class _HomeScreenState extends State<HomeScreen> {
   void _openAISuggestions(int index) {
     final task = _schedule[index];
     final duration = _calculateDuration(task.time, task.endTime);
-
+    
+    // Show loading sheet first
     showModalBottomSheet(
       context: context,
-      builder: (context) => _AISuggestionSheet(
-        timeSlot: "${task.time} - ${task.endTime}",
-        durationMinutes: duration,
-        onSelect: (newTitle, newDesc, newUrl, newType) {
-          setState(() {
-            _schedule[index].title = newTitle;
-            _schedule[index].description = newDesc;
-            _schedule[index].resourceUrl = newUrl;
-            _schedule[index].resourceType = newType;
-            _schedule[index].location = "Self Study";
-            _schedule[index].status = TaskStatus.scheduled; 
-          });
-          Navigator.pop(context);
-        },
-      ),
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) {
+        // Use FutureBuilder to wait for Database Data
+        return FutureBuilder<List<ActivitySuggestion>>(
+          future: SuggestionService().getSuggestions(duration), // <--- CALL THE SERVICE
+          builder: (context, snapshot) {
+            
+            // 1. LOADING STATE
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return SizedBox(
+                height: 300, 
+                child: Center(
+                  child: CircularProgressIndicator(color: AppTheme.goldAccent)
+                )
+              );
+            }
+
+            // 2. ERROR / EMPTY STATE
+            if (snapshot.hasError || !snapshot.hasData || snapshot.data!.isEmpty) {
+              return SizedBox(
+                height: 300,
+                child: Center(
+                  child: Text("No suggestions found for this time slot.", style: TextStyle(color: Colors.grey))
+                )
+              );
+            }
+
+            // 3. SUCCESS STATE (Pass data to your existing _AISuggestionSheet)
+            return _AISuggestionSheet(
+              timeSlot: "${task.time} - ${task.endTime}",
+              durationMinutes: duration,
+              suggestions: snapshot.data!, // <--- PASS THE DATA HERE
+              onSelect: (newTitle, newDesc, newUrl, newType) {
+                setState(() {
+                  _schedule[index].title = newTitle;
+                  _schedule[index].description = newDesc;
+                  _schedule[index].resourceUrl = newUrl;
+                  _schedule[index].resourceType = newType;
+                  _schedule[index].location = "Self Study";
+                  _schedule[index].status = TaskStatus.scheduled;
+                });
+                Navigator.pop(context);
+              },
+            );
+          },
+        );
+      },
     );
   }
 
@@ -613,12 +649,17 @@ class _HomeScreenState extends State<HomeScreen> {
 class _AISuggestionSheet extends StatefulWidget {
   final String timeSlot;
   final int durationMinutes;
+  // --- NEW: Add this variable to hold the data ---
+  final List<ActivitySuggestion> suggestions; 
   final Function(String title, String desc, String url, String type) onSelect;
 
   const _AISuggestionSheet({
-    required this.timeSlot, 
-    required this.durationMinutes, 
-    required this.onSelect
+    super.key,
+    required this.timeSlot,
+    required this.durationMinutes,
+    // --- NEW: Require it in the constructor ---
+    required this.suggestions, 
+    required this.onSelect,
   });
 
   @override
