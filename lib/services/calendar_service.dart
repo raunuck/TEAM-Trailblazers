@@ -4,6 +4,7 @@ import 'package:googleapis/calendar/v3.dart' as cal;
 import 'package:extension_google_sign_in_as_googleapis_auth/extension_google_sign_in_as_googleapis_auth.dart';
 import 'package:intl/intl.dart';
 import '../screens/dashboard/home_screen.dart'; 
+import '../models/schedule_task.dart';
 
 class CalendarService {
   final GoogleSignIn _googleSignIn = GoogleSignIn(
