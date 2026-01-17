@@ -10,6 +10,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../services/excel_service.dart';
 import '../../screens/gamification/whiteboard_screen.dart';
 import 'package:image_picker/image_picker.dart'; // Ensure you added image_picker to pubspec.yaml
+import '../../models/schedule_task.dart';
 
 // --- 1. UPDATED MODEL (Added isCompleted) ---
 class HomeScreen extends StatefulWidget {
