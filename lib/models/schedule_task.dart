@@ -12,7 +12,7 @@ class ScheduleTask {
   String? description;
   String? resourceUrl;
   String? resourceType;
-  bool isCompleted;
+  bool isCompleted; // This is the new field for checkboxes
 
   ScheduleTask({
     required this.id,
