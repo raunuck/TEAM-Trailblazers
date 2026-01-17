@@ -1,12 +1,38 @@
+import 'dart:io'; // Needed for File
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:image_picker/image_picker.dart'; // NEW IMPORT
 import '../../core/theme.dart';
-import 'home_screen.dart'; // Import to access ScheduleTask model
+import 'home_screen.dart'; 
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   final List<ScheduleTask> tasks;
 
   const ProfileScreen({super.key, required this.tasks});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  File? _profileImage; // Stores the selected image locally
+  final ImagePicker _picker = ImagePicker();
+
+  // --- LOGIC: Pick Image from Gallery ---
+  Future<void> _pickImage() async {
+    try {
+      final XFile? pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+      if (pickedFile != null) {
+        setState(() {
+          _profileImage = File(pickedFile.path);
+        });
+        // Note: To make this persist across app restarts, you would upload 
+        // this file to Supabase Storage here and save the URL to the user's profile.
+      }
+    } catch (e) {
+      debugPrint("Error picking image: $e");
+    }
+  }
 
   // --- HELPER: Calculate Stats ---
   Map<String, String> _calculateStats() {
@@ -14,40 +40,32 @@ class ProfileScreen extends StatelessWidget {
     int completed = 0;
     int studyMinutes = 0;
 
-    final now = DateTime.now();
     final timeNow = TimeOfDay.now();
     final currentMinutes = timeNow.hour * 60 + timeNow.minute;
 
-    for (var task in tasks) {
+    for (var task in widget.tasks) {
       if (task.status == TaskStatus.scheduled) {
         total++;
-        
-        // Parse Time
         final endParts = task.endTime.split(':').map(int.parse).toList();
         final startParts = task.time.split(':').map(int.parse).toList();
         final endTaskMinutes = endParts[0] * 60 + endParts[1];
         
-        // Calculate Duration
         int duration = endTaskMinutes - (startParts[0] * 60 + startParts[1]);
         studyMinutes += duration;
 
-        // Check if "Completed" (Time has passed)
-        // Note: Simple logic assuming tasks are for "Today". 
-        // For a full app, you'd check dates too.
         if (endTaskMinutes < currentMinutes) {
           completed++;
         }
       }
     }
 
-    // Completion %
     double progress = total == 0 ? 0 : (completed / total);
 
     return {
       "total": total.toString(),
       "completed": completed.toString(),
       "hours": (studyMinutes / 60).toStringAsFixed(1),
-      "progress": progress.toString(), // 0.0 to 1.0
+      "progress": progress.toString(),
     };
   }
 
@@ -71,19 +89,51 @@ class ProfileScreen extends StatelessWidget {
         padding: const EdgeInsets.all(24),
         child: Column(
           children: [
-            // --- 1. PROFILE HEADER ---
+            // --- 1. PROFILE HEADER (Editable) ---
             Center(
               child: Column(
                 children: [
-                  CircleAvatar(
-                    radius: 50,
-                    backgroundColor: AppTheme.goldAccent.withOpacity(0.2),
-                    child: Text(
-                      email[0].toUpperCase(),
-                      style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold, color: AppTheme.goldAccent),
-                    ),
+                  Stack(
+                    children: [
+                      // THE AVATAR
+                      GestureDetector(
+                        onTap: _pickImage, // Click to change
+                        child: CircleAvatar(
+                          radius: 60,
+                          backgroundColor: AppTheme.goldAccent.withOpacity(0.2),
+                          backgroundImage: _profileImage != null 
+                              ? FileImage(_profileImage!) 
+                              : null,
+                          child: _profileImage == null
+                              ? Text(
+                                  email.isNotEmpty ? email[0].toUpperCase() : "G",
+                                  style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold, color: AppTheme.goldAccent),
+                                )
+                              : null,
+                        ),
+                      ),
+                      
+                      // THE CAMERA ICON (Visual Cue)
+                      Positioned(
+                        bottom: 0,
+                        right: 4,
+                        child: GestureDetector(
+                          onTap: _pickImage,
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: const BoxDecoration(
+                              color: AppTheme.primaryBlue,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.camera_alt, color: Colors.white, size: 20),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
+                  
                   const SizedBox(height: 16),
+                  
                   Text(
                     email,
                     style: TextStyle(
@@ -100,7 +150,7 @@ class ProfileScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: const Text(
-                      "Level 1 Scholar", // Gamification placeholder
+                      "Level 1 Scholar",
                       style: TextStyle(color: Colors.white, fontSize: 12),
                     ),
                   ),
@@ -156,8 +206,7 @@ class ProfileScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             
-            // List of actual tasks
-            ...tasks.where((t) => t.status == TaskStatus.scheduled).map((task) {
+            ...widget.tasks.where((t) => t.status == TaskStatus.scheduled).map((task) {
               return Container(
                 margin: const EdgeInsets.only(bottom: 12),
                 decoration: BoxDecoration(
@@ -177,7 +226,7 @@ class ProfileScreen extends StatelessWidget {
               );
             }),
             
-            if (tasks.where((t) => t.status == TaskStatus.scheduled).isEmpty)
+            if (widget.tasks.where((t) => t.status == TaskStatus.scheduled).isEmpty)
                const Padding(
                  padding: EdgeInsets.all(20.0),
                  child: Text("No tasks scheduled yet. Start planning!", style: TextStyle(color: Colors.grey)),
