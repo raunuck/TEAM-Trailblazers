@@ -12,34 +12,6 @@ import '../../screens/gamification/whiteboard_screen.dart';
 import 'package:image_picker/image_picker.dart'; // Ensure you added image_picker to pubspec.yaml
 
 // --- 1. UPDATED MODEL (Added isCompleted) ---
-enum TaskStatus { scheduled, free, cancelled }
-
-class ScheduleTask {
-  String id;
-  String time;
-  String endTime;
-  String title;
-  String location;
-  TaskStatus status;
-  String? description;
-  String? resourceUrl;
-  String? resourceType;
-  bool isCompleted; // <--- NEW FIELD
-
-  ScheduleTask({
-    required this.id,
-    required this.time,
-    required this.endTime,
-    required this.title,
-    this.location = "",
-    this.status = TaskStatus.scheduled,
-    this.description,
-    this.resourceUrl,
-    this.resourceType,
-    this.isCompleted = false, // Default is NOT done
-  });
-}
-
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
