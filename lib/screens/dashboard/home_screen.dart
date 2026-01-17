@@ -8,6 +8,7 @@ import '../../models/activity_suggestion.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../services/excel_service.dart';
 import '../../screens/gamification/whiteboard_screen.dart';
+import '../../screens/dashboard/profile_screen.dart';
 
 enum TaskStatus { scheduled, free, cancelled }
 
@@ -327,7 +328,27 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: AppBar(
         iconTheme: const IconThemeData(color: AppTheme.goldAccent),
-        // ----------------------
+        
+        // --- ADDED PROFILE BUTTON HERE ---
+        leading: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  // Pass the current schedule to the profile page
+                  builder: (context) => ProfileScreen(tasks: _schedule),
+                ),
+              );
+            },
+            child: CircleAvatar(
+              backgroundColor: AppTheme.goldAccent.withOpacity(0.2),
+              child: const Icon(Icons.person, color: AppTheme.goldAccent),
+            ),
+          ),
+        ),
+        // -------------------------------
 
         title: Text(
           "PlanBEE", 
@@ -901,7 +922,7 @@ void _showConfirmationDialog(ActivitySuggestion item) {
             children: [
               Text(
                   item.description, 
-                  maxLines: 2,
+                  maxLines: 2, 
                   overflow: TextOverflow.ellipsis, 
                   style: TextStyle(fontSize: 12, color: isDark ? Colors.white70 : Colors.black54)
                   ),
